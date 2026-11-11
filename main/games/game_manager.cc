@@ -33,6 +33,28 @@ void GameManager::Init() {
     ESP_LOGI(TAG, "GameManager initialized");
 }
 
+void GameManager::CreateFloatingGamesButton() {
+    if (games_btn_ || !chatbot_screen_) return;
+
+    // High-visibility Games Button on chatbot screen at bottom-right (x=216, y=186, w=96, h=46)
+    games_btn_ = lv_button_create(chatbot_screen_);
+    lv_obj_set_pos(games_btn_, 216, 186);
+    lv_obj_set_size(games_btn_, 96, 46);
+    lv_obj_set_style_bg_color(games_btn_, lv_color_hex(0x0F172A), 0);
+    lv_obj_set_style_bg_opa(games_btn_, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(games_btn_, 2, 0);
+    lv_obj_set_style_border_color(games_btn_, lv_color_hex(0x00E5FF), 0); // Neon Cyan border
+    lv_obj_set_style_radius(games_btn_, 8, 0);
+    lv_obj_set_style_pad_all(games_btn_, 0, 0);
+    lv_obj_move_foreground(games_btn_);
+    lv_obj_add_event_cb(games_btn_, OnFloatingGamesBtnClicked, LV_EVENT_CLICKED, nullptr);
+
+    lv_obj_t* lbl = lv_label_create(games_btn_);
+    lv_label_set_text(lbl, "GAMES");
+    lv_obj_set_style_text_color(lbl, lv_color_hex(0x00E5FF), 0);
+    lv_obj_center(lbl);
+}
+
 void GameManager::ShowLauncher() {
     if (!chatbot_screen_) {
         chatbot_screen_ = lv_screen_active();

@@ -35,6 +35,8 @@ private:
     GameManager();
     ~GameManager();
 
+    void CreateFloatingGamesButton();
+
     lv_obj_t* chatbot_screen_ = nullptr;
     lv_obj_t* launcher_screen_ = nullptr;
     lv_obj_t* game_screen_ = nullptr;

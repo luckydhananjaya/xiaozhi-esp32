@@ -3,6 +3,15 @@ name: Build Boards
 on:
   # Manual runs exercise the full matrix, including CI-specific options.
   workflow_dispatch:
+    inputs:
+      board:
+        description: 'Specific board directory to build'
+        required: false
+        default: 'freenove-esp32s3-display-2.8-lcd'
+      language:
+        description: 'Firmware language'
+        required: false
+        default: 'en-US'
   push:
     branches:
       - main
@@ -40,7 +49,9 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           CHANGED_FILE="$RUNNER_TEMP/changed-files.txt"
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && -n "${{ inputs.board }}" ]]; then
+            echo "main/boards/${{ inputs.board }}/" > "$CHANGED_FILE"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             git ls-files > "$CHANGED_FILE"
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
             # Checkout is the synthetic merge commit. Compare the PR branch
@@ -95,7 +106,11 @@ jobs:
           if [[ "$BUILD_OPTIONS_JSON" != "null" && -n "$BUILD_OPTIONS_JSON" ]]; then
             OPTIONS+=(--build-options-json "$BUILD_OPTIONS_JSON")
           fi
-          python scripts/build.py "$BOARD" --name "$VARIANT" "${OPTIONS[@]}"
+          LANG_ARG=""
+          if [[ -n "${{ inputs.language }}" ]]; then
+            LANG_ARG="--language ${{ inputs.language }}"
+          fi
+          python scripts/build.py "$BOARD" --name "$VARIANT" $LANG_ARG "${OPTIONS[@]}"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7

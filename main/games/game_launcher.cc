@@ -15,17 +15,17 @@ struct GameItem {
 static const GameItem kGames[] = {
     { GameType::kTetris,    "TETRIS",   "[]", "PLAY",  0x0284C7 }, // Blue
     { GameType::kBreakout,  "BRICKS",   "==", "PLAY",  0x16A34A }, // Green
-    { GameType::kSnake,     "SNAKE",    "~~", "NEXT",  0xCA8A04 }, // Yellow
-    { GameType::kInvaders,  "INVADERS", "><", "NEXT",  0x9333EA }, // Purple
-    { GameType::kFlappy,    "FLAPPY",   "^v", "NEXT",  0xEA580C }, // Orange
-    { GameType::kPuzzle2048,"2048",     "##", "NEXT",  0xDC2626 }, // Red
-    { GameType::kPong,      "PONG",     "||", "NEXT",  0x0D9488 }, // Teal
+    { GameType::kSnake,     "SNAKE",    "~~", "PLAY",  0xCA8A04 }, // Yellow
+    { GameType::kInvaders,  "INVADERS", "><", "PLAY",  0x9333EA }, // Purple
+    { GameType::kFlappy,    "FLAPPY",   "^v", "PLAY",  0xEA580C }, // Orange
+    { GameType::kPuzzle2048,"2048",     "##", "PLAY",  0xDC2626 }, // Red
+    { GameType::kPong,      "PONG",     "||", "PLAY",  0x0D9488 }, // Teal
     { GameType::kGameBoy,   "GAMEBOY",  "GB", "CARD",  0x4F46E5 }, // Indigo
 };
 
 static void GameCardEventCb(lv_event_t* e) {
     auto type = static_cast<GameType>(reinterpret_cast<intptr_t>(lv_event_get_user_data(e)));
-    if (type == GameType::kTetris || type == GameType::kBreakout) {
+    if (type != GameType::kNone) {
         GameManager::GetInstance().StartGame(type);
     }
 }

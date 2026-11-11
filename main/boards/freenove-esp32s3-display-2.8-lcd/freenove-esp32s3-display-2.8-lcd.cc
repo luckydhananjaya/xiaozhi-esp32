@@ -195,7 +195,7 @@ private:
 
     void InitializeTools() {
         auto& mcp = McpServer::GetInstance();
-        mcp.AddTool("self.games.launch", "Launch retro arcade game or games menu. Parameter `game`: 'launcher', 'tetris', or 'breakout'.",
+        mcp.AddTool("self.games.launch", "Launch retro arcade game or games menu. Parameter `game`: 'launcher', 'tetris', 'breakout', 'snake', 'flappy', 'invaders', 'pong', or '2048'.",
             PropertyList({
                 Property("game", kPropertyTypeString, std::string("launcher"))
             }),
@@ -204,9 +204,24 @@ private:
                 if (game == "tetris") {
                     GameManager::GetInstance().StartGame(GameType::kTetris);
                     return "Tetris launched";
-                } else if (game == "breakout") {
+                } else if (game == "breakout" || game == "bricks") {
                     GameManager::GetInstance().StartGame(GameType::kBreakout);
                     return "Breakout launched";
+                } else if (game == "snake") {
+                    GameManager::GetInstance().StartGame(GameType::kSnake);
+                    return "Snake launched";
+                } else if (game == "flappy" || game == "flappybird") {
+                    GameManager::GetInstance().StartGame(GameType::kFlappy);
+                    return "Flappy Bird launched";
+                } else if (game == "invaders" || game == "spaceinvaders") {
+                    GameManager::GetInstance().StartGame(GameType::kInvaders);
+                    return "Space Invaders launched";
+                } else if (game == "pong") {
+                    GameManager::GetInstance().StartGame(GameType::kPong);
+                    return "Pong launched";
+                } else if (game == "2048" || game == "puzzle2048") {
+                    GameManager::GetInstance().StartGame(GameType::kPuzzle2048);
+                    return "2048 launched";
                 } else {
                     GameManager::GetInstance().ShowLauncher();
                     return "Game launcher opened";

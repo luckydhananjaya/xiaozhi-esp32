@@ -2,6 +2,12 @@
 #include "game_launcher.h"
 #include "tetris.h"
 #include "breakout.h"
+#include "snake.h"
+#include "flappy.h"
+#include "invaders.h"
+#include "pong.h"
+#include "puzzle2048.h"
+#include "gameboy.h"
 #include "application.h"
 #include <esp_log.h>
 
@@ -73,6 +79,30 @@ void GameManager::StartGame(GameType game) {
         game_screen_ = BreakoutGame::CreateScreen();
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Breakout");
+    } else if (game == GameType::kSnake) {
+        game_screen_ = SnakeGame::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started Snake");
+    } else if (game == GameType::kFlappy) {
+        game_screen_ = FlappyGame::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started Flappy Bird");
+    } else if (game == GameType::kInvaders) {
+        game_screen_ = InvadersGame::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started Space Invaders");
+    } else if (game == GameType::kPong) {
+        game_screen_ = PongGame::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started Pong");
+    } else if (game == GameType::kPuzzle2048) {
+        game_screen_ = Puzzle2048Game::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started 2048");
+    } else if (game == GameType::kGameBoy) {
+        game_screen_ = GameBoyApp::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started GameBoy App");
     }
 }
 
@@ -81,6 +111,18 @@ void GameManager::ExitCurrentGame() {
         TetrisGame::Destroy();
     } else if (current_game_ == GameType::kBreakout) {
         BreakoutGame::Destroy();
+    } else if (current_game_ == GameType::kSnake) {
+        SnakeGame::Destroy();
+    } else if (current_game_ == GameType::kFlappy) {
+        FlappyGame::Destroy();
+    } else if (current_game_ == GameType::kInvaders) {
+        InvadersGame::Destroy();
+    } else if (current_game_ == GameType::kPong) {
+        PongGame::Destroy();
+    } else if (current_game_ == GameType::kPuzzle2048) {
+        Puzzle2048Game::Destroy();
+    } else if (current_game_ == GameType::kGameBoy) {
+        GameBoyApp::Destroy();
     }
 
     current_game_ = GameType::kNone;

@@ -80,6 +80,16 @@ static void TouchpadReadCallback(lv_indev_t* indev, lv_indev_data_t* data) {
     }
 }
 
+class HosyondDisplay : public SpiLcdDisplay {
+public:
+    using SpiLcdDisplay::SpiLcdDisplay;
+
+    virtual void SetupUI() override {
+        SpiLcdDisplay::SetupUI();
+        GameManager::GetInstance().Init();
+    }
+};
+
 class FreenoveESP32S3Display : public WifiBoard {
 private:
     Button boot_button_;
@@ -187,7 +197,7 @@ private:
         esp_lcd_panel_invert_color(panel, DISPLAY_INVERT_COLOR);
         esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
         esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
-        display_ = new SpiLcdDisplay(panel_io, panel,
+        display_ = new HosyondDisplay(panel_io, panel,
             DISPLAY_WIDTH, DISPLAY_HEIGHT,
             DISPLAY_OFFSET_X, DISPLAY_OFFSET_Y,
             DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
@@ -240,9 +250,6 @@ public:
         InitializeButtons();
         InitializeTools();
         GetBacklight()->SetBrightness(100);
-
-        // Initialize Retro Game Manager
-        GameManager::GetInstance().Init();
     }
 
     virtual Led *GetLed() override {

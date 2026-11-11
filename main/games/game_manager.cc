@@ -29,20 +29,20 @@ static void OnFloatingGamesBtnClicked(lv_event_t* e) {
 void GameManager::Init() {
     chatbot_screen_ = lv_screen_active();
     CreateFloatingGamesButton();
-    ESP_LOGI(TAG, "GameManager initialized");
+    ESP_LOGI(TAG, "GameManager initialized on lv_layer_top");
 }
 
 void GameManager::CreateFloatingGamesButton() {
-    if (!chatbot_screen_ || games_btn_) return;
+    if (games_btn_) return;
 
-    // Stylish Floating Games Button at bottom-right (x=245, y=198, w=68, h=32)
-    games_btn_ = lv_button_create(chatbot_screen_);
-    lv_obj_set_pos(games_btn_, 242, 196);
-    lv_obj_set_size(games_btn_, 70, 36);
-    lv_obj_set_style_bg_color(games_btn_, lv_color_hex(0x1E293B), 0);
+    // Stylish Floating Games Button on lv_layer_top at bottom-right (x=228, y=186, w=84, h=46)
+    games_btn_ = lv_button_create(lv_layer_top());
+    lv_obj_set_pos(games_btn_, 228, 186);
+    lv_obj_set_size(games_btn_, 84, 46);
+    lv_obj_set_style_bg_color(games_btn_, lv_color_hex(0x0F172A), 0);
     lv_obj_set_style_border_width(games_btn_, 2, 0);
-    lv_obj_set_style_border_color(games_btn_, lv_color_hex(0x38BDF8), 0); // Cyan border
-    lv_obj_set_style_radius(games_btn_, 8, 0);
+    lv_obj_set_style_border_color(games_btn_, lv_color_hex(0x38BDF8), 0); // Sky blue border
+    lv_obj_set_style_radius(games_btn_, 10, 0);
     lv_obj_set_style_pad_all(games_btn_, 0, 0);
     lv_obj_add_event_cb(games_btn_, OnFloatingGamesBtnClicked, LV_EVENT_CLICKED, nullptr);
 
@@ -55,6 +55,9 @@ void GameManager::CreateFloatingGamesButton() {
 void GameManager::ShowLauncher() {
     if (!chatbot_screen_) {
         chatbot_screen_ = lv_screen_active();
+    }
+    if (games_btn_) {
+        lv_obj_add_flag(games_btn_, LV_OBJ_FLAG_HIDDEN);
     }
 
     if (!launcher_screen_) {
@@ -70,6 +73,9 @@ void GameManager::ShowLauncher() {
 void GameManager::StartGame(GameType game) {
     current_game_ = game;
     in_launcher_ = false;
+    if (games_btn_) {
+        lv_obj_add_flag(games_btn_, LV_OBJ_FLAG_HIDDEN);
+    }
 
     if (game == GameType::kTetris) {
         game_screen_ = TetrisGame::CreateScreen();
@@ -136,5 +142,8 @@ void GameManager::ExitToChatbot() {
     if (chatbot_screen_) {
         lv_screen_load(chatbot_screen_);
         ESP_LOGI(TAG, "Returned to Optimus Prime Chatbot screen");
+    }
+    if (games_btn_) {
+        lv_obj_remove_flag(games_btn_, LV_OBJ_FLAG_HIDDEN);
     }
 }

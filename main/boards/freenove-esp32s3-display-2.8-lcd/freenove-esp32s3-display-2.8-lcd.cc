@@ -302,10 +302,20 @@ private:
                 } else if (game == "2048" || game == "puzzle2048") {
                     GameManager::GetInstance().StartGame(GameType::kPuzzle2048);
                     return "2048 launched";
+                } else if (game == "settings" || game == "setting" || game == "preferences") {
+                    GameManager::GetInstance().ShowSettings();
+                    return "Settings screen opened";
                 } else {
                     GameManager::GetInstance().ShowLauncher();
                     return "Game launcher opened";
                 }
+            });
+
+        mcp.AddTool("self.settings.open", "Open the system settings screen on display to adjust brightness and volume.",
+            PropertyList(),
+            [](const PropertyList& properties) -> ReturnValue {
+                GameManager::GetInstance().ShowSettings();
+                return "Settings screen opened";
             });
     }
 

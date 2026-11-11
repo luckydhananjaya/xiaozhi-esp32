@@ -8,6 +8,7 @@
 #include "pong.h"
 #include "puzzle2048.h"
 #include "gameboy.h"
+#include "settings_ui.h"
 #include "application.h"
 #include <esp_log.h>
 
@@ -76,6 +77,19 @@ void GameManager::ShowLauncher() {
     ESP_LOGI(TAG, "Switched to Game Launcher (Portrait)");
 }
 
+void GameManager::ShowSettings() {
+    if (!chatbot_screen_) {
+        chatbot_screen_ = lv_screen_active();
+    }
+    if (games_btn_) {
+        lv_obj_add_flag(games_btn_, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (orientation_callback_) {
+        orientation_callback_(true); // Portrait for Settings
+    }
+    StartGame(GameType::kSettings);
+}
+
 void GameManager::StartGame(GameType game) {
     current_game_ = game;
     in_launcher_ = false;
@@ -121,6 +135,10 @@ void GameManager::StartGame(GameType game) {
         game_screen_ = GameBoyApp::CreateScreen();
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started GameBoy App");
+    } else if (game == GameType::kSettings) {
+        game_screen_ = SettingsUI::CreateScreen();
+        lv_screen_load(game_screen_);
+        ESP_LOGI(TAG, "Started Settings Screen");
     }
 }
 
@@ -141,6 +159,8 @@ void GameManager::ExitCurrentGame() {
         Puzzle2048Game::Destroy();
     } else if (current_game_ == GameType::kGameBoy) {
         GameBoyApp::Destroy();
+    } else if (current_game_ == GameType::kSettings) {
+        SettingsUI::Destroy();
     }
 
     current_game_ = GameType::kNone;

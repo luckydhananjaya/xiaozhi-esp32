@@ -14,7 +14,8 @@ enum class GameType {
     kFlappy,
     kPuzzle2048,
     kPong,
-    kGameBoy
+    kGameBoy,
+    kSettings
 };
 
 class GameManager {
@@ -23,6 +24,7 @@ public:
 
     void Init();
     void ShowLauncher();
+    void ShowSettings();
     void StartGame(GameType game);
     void ExitCurrentGame();
     void ExitToChatbot();

@@ -51,13 +51,28 @@ lv_obj_t* GameLauncher::CreateScreen() {
     lv_obj_set_scrollbar_mode(header, LV_SCROLLBAR_MODE_OFF);
 
     lv_obj_t* title = lv_label_create(header);
-    lv_label_set_text(title, "ARCADE (8 GAMES)");
+    lv_label_set_text(title, "ARCADE");
     lv_obj_set_style_text_color(title, lv_color_hex(0xF8FAFC), 0);
     lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
 
+    // SETTINGS Button
+    lv_obj_t* set_btn = lv_button_create(header);
+    lv_obj_set_size(set_btn, 48, 24);
+    lv_obj_align(set_btn, LV_ALIGN_RIGHT_MID, -66, 0);
+    lv_obj_set_style_bg_color(set_btn, lv_color_hex(0x0284C7), 0);
+    lv_obj_set_style_radius(4, 0);
+    lv_obj_add_event_cb(set_btn, [](lv_event_t* e) {
+        GameManager::GetInstance().ShowSettings();
+    }, LV_EVENT_CLICKED, nullptr);
+
+    lv_obj_t* set_lbl = lv_label_create(set_btn);
+    lv_label_set_text(set_lbl, "SET");
+    lv_obj_set_style_text_color(set_lbl, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_center(set_lbl);
+
     // EXIT Button
     lv_obj_t* exit_btn = lv_button_create(header);
-    lv_obj_set_size(exit_btn, 60, 24);
+    lv_obj_set_size(exit_btn, 54, 24);
     lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);

@@ -1,0 +1,27 @@
+name: Build Hosyond Board
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Hosyond 2.8 LCD English
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v6.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          source "$IDF_PATH/export.sh"
+          python scripts/build.py freenove-esp32s3-display-2.8-lcd --language en-US
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: hosyond-english-firmware
+          path: build/merged-binary.bin
+          if-no-files-found: error

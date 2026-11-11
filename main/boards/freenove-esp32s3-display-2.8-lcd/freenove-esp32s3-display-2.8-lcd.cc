@@ -197,10 +197,10 @@ private:
         auto& mcp = McpServer::GetInstance();
         mcp.AddTool("self.games.launch", "Launch retro arcade game or games menu. Parameter `game`: 'launcher', 'tetris', or 'breakout'.",
             PropertyList({
-                Property("game", "The game to launch: launcher, tetris, breakout", PropertyType::kString, true)
+                Property("game", kPropertyTypeString, std::string("launcher"))
             }),
             [](const PropertyList& properties) -> ReturnValue {
-                std::string game = properties["game"].value;
+                std::string game = properties["game"].value<std::string>();
                 if (game == "tetris") {
                     GameManager::GetInstance().StartGame(GameType::kTetris);
                     return "Tetris launched";

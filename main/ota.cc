@@ -211,7 +211,14 @@ NetworkResult<> Ota::CheckVersion() {
             
             // 如果有时区偏移，计算本地时间
             if (cJSON_IsNumber(timezone_offset)) {
-                ts += (timezone_offset->valueint * 60 * 1000); // 转换分钟为毫秒
+                int offset = timezone_offset->valueint;
+                if (abs(offset) > 1000) {
+                    // Offset provided in seconds (e.g. 25200 for UTC+7)
+                    ts += ((int64_t)offset * 1000LL);
+                } else {
+                    // Offset provided in minutes (e.g. 420 for UTC+7, 480 for UTC+8)
+                    ts += ((int64_t)offset * 60LL * 1000LL);
+                }
             }
             
             tv.tv_sec = (time_t)(ts / 1000);  // 转换毫秒为秒

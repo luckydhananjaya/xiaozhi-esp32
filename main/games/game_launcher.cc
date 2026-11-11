@@ -60,7 +60,7 @@ lv_obj_t* GameLauncher::CreateScreen() {
     lv_obj_set_size(set_btn, 48, 24);
     lv_obj_align(set_btn, LV_ALIGN_RIGHT_MID, -66, 0);
     lv_obj_set_style_bg_color(set_btn, lv_color_hex(0x0284C7), 0);
-    lv_obj_set_style_radius(4, 0);
+    lv_obj_set_style_radius(set_btn, 4, 0);
     lv_obj_add_event_cb(set_btn, [](lv_event_t* e) {
         GameManager::GetInstance().ShowSettings();
     }, LV_EVENT_CLICKED, nullptr);

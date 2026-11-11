@@ -3,6 +3,7 @@
 
 #include <lvgl.h>
 #include <string>
+#include <functional>
 
 enum class GameType {
     kNone,

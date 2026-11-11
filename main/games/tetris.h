@@ -7,6 +7,7 @@
 
 class TetrisGame {
 public:
+    static TetrisGame* instance_;
     static lv_obj_t* CreateScreen();
     static void Destroy();
 
@@ -21,8 +22,6 @@ public:
     void Rotate();
 
 private:
-    static TetrisGame* instance_;
-
     static const int kBoardWidth = 10;
     static const int kBoardHeight = 20;
     static const int kBlockSize = 10;

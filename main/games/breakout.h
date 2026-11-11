@@ -6,6 +6,7 @@
 
 class BreakoutGame {
 public:
+    static BreakoutGame* instance_;
     static lv_obj_t* CreateScreen();
     static void Destroy();
 
@@ -16,8 +17,6 @@ public:
     void SetPaddleX(int x);
 
 private:
-    static BreakoutGame* instance_;
-
     static const int kBrickRows = 5;
     static const int kBrickCols = 8;
     static const int kPaddleWidth = 56;

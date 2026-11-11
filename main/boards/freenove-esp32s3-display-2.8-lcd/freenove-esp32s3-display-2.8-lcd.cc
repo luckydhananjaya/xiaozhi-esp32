@@ -23,6 +23,7 @@
 #include "system_reset.h"
 #include "esp_lcd_ili9341.h"
 #include "games/game_manager.h"
+#include "games/screen_sleep_manager.h"
 
 #define TAG "FreenoveESP32S3Display"
 
@@ -86,6 +87,11 @@ static void TouchpadReadCallback(lv_indev_t* indev, lv_indev_data_t* data) {
     bool touched = false;
     uint16_t x = 0, y = 0;
     if (g_touch_driver->Read(touched, x, y) && touched) {
+        if (ScreenSleepManager::GetInstance().HandleTouch()) {
+            // Waking from standby: absorb initial wake tap so it doesn't activate underlying widgets
+            data->state = LV_INDEV_STATE_RELEASED;
+            return;
+        }
         data->point.x = x;
         data->point.y = y;
         data->state = LV_INDEV_STATE_PRESSED;
@@ -198,6 +204,7 @@ private:
 
     void InitializeButtons() {
         boot_button_.OnClick([this]() {
+            ScreenSleepManager::GetInstance().WakeUp();
             auto &app = Application::GetInstance();
             if (app.GetDeviceState() == kDeviceStateStarting) {
                 EnterWifiConfigMode();
@@ -285,6 +292,30 @@ private:
                 GameManager::GetInstance().ShowSettings();
                 return "Settings screen opened";
             });
+
+        mcp.AddTool("self.screen.sleep", "Turn off screen backlight to enter low-power standby mode.",
+            PropertyList(),
+            [](const PropertyList& properties) -> ReturnValue {
+                ScreenSleepManager::GetInstance().Sleep();
+                return "Screen entered standby sleep mode";
+            });
+
+        mcp.AddTool("self.screen.wake", "Turn on / wake screen from sleep mode.",
+            PropertyList(),
+            [](const PropertyList& properties) -> ReturnValue {
+                ScreenSleepManager::GetInstance().WakeUp();
+                return "Screen woken up";
+            });
+
+        mcp.AddTool("self.screen.set_timeout", "Set screen sleep timeout in seconds (0 for never, 15, 30, 60).",
+            PropertyList({
+                Property("seconds", kPropertyTypeInteger, 30)
+            }),
+            [](const PropertyList& properties) -> ReturnValue {
+                int sec = properties["seconds"].value<int>();
+                ScreenSleepManager::GetInstance().SetTimeout(sec);
+                return "Screen sleep timeout updated";
+            });
     }
 
 public:
@@ -298,6 +329,7 @@ public:
         InitializeButtons();
         InitializeTools();
         GetBacklight()->SetBrightness(100);
+        ScreenSleepManager::GetInstance().Init();
     }
 
     virtual Led *GetLed() override {

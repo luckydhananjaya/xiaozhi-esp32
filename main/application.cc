@@ -11,6 +11,7 @@
 #include "system_info.h"
 #include "text_glyph_payload.h"
 #include "websocket_protocol.h"
+#include "games/screen_sleep_manager.h"
 
 #include <driver/gpio.h>
 #include <esp_log.h>
@@ -61,7 +62,12 @@ Application::~Application() {
     vEventGroupDelete(event_group_);
 }
 
-bool Application::SetDeviceState(DeviceState state) { return state_machine_.TransitionTo(state); }
+bool Application::SetDeviceState(DeviceState state) {
+    if (state == kDeviceStateListening || state == kDeviceStateSpeaking || state == kDeviceStateNotifying) {
+        ScreenSleepManager::GetInstance().WakeUp();
+    }
+    return state_machine_.TransitionTo(state);
+}
 
 void Application::Initialize() {
     auto& board = Board::GetInstance();

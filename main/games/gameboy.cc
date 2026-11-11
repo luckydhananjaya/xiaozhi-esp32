@@ -66,7 +66,7 @@ void GameBoyApp::InitUI(lv_obj_t* parent) {
     lv_obj_set_style_text_color(title, lv_color_hex(0x818CF8), 0);
     lv_obj_align(title, LV_ALIGN_LEFT_MID, 12, 0);
 
-    lv_obj_t* exit_btn = lv_button_create(header);
+    lv_obj_t* exit_btn = lv_button_create(header_);
     lv_obj_set_size(exit_btn, 60, 22);
     lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);

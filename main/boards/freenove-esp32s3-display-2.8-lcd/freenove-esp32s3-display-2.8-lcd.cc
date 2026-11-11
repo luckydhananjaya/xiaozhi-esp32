@@ -22,6 +22,7 @@
 #include "led/single_led.h"
 #include "system_reset.h"
 #include "esp_lcd_ili9341.h"
+#include "games/game_manager.h"
 
 #define TAG "FreenoveESP32S3Display"
 
@@ -51,14 +52,33 @@ public:
         if (points == 0) return true;
 
         touched = true;
-        x = ((buf[1] & 0x0F) << 8) | buf[2];
-        y = ((buf[3] & 0x0F) << 8) | buf[4];
+        uint16_t raw_x = ((buf[1] & 0x0F) << 8) | buf[2];
+        uint16_t raw_y = ((buf[3] & 0x0F) << 8) | buf[4];
+
+        // Landscape 320x240 mapping for FT6336 on 2.8" TFT:
+        x = raw_y;
+        y = (raw_x < 240) ? (239 - raw_x) : 0;
         return true;
     }
 
 private:
     i2c_master_dev_handle_t dev_;
 };
+
+static TouchDriver* g_touch_driver = nullptr;
+
+static void TouchpadReadCallback(lv_indev_t* indev, lv_indev_data_t* data) {
+    if (!g_touch_driver) return;
+    bool touched = false;
+    uint16_t x = 0, y = 0;
+    if (g_touch_driver->Read(touched, x, y) && touched) {
+        data->point.x = x;
+        data->point.y = y;
+        data->state = LV_INDEV_STATE_PRESSED;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
 
 class FreenoveESP32S3Display : public WifiBoard {
 private:
@@ -67,56 +87,10 @@ private:
     i2c_master_bus_handle_t codec_i2c_bus_;
     TouchDriver touch_;
     AdcBatteryMonitor* adc_battery_monitor_;
+    lv_indev_t* touch_indev_ = nullptr;
 
     void InitializeBatteryMonitor() {
         adc_battery_monitor_ = new AdcBatteryMonitor(ADC_UNIT_1, ADC_CHANNEL_8, 200000, 200000, GPIO_NUM_NC);
-    }
-
-    static void TouchTask(void *arg) {
-        auto *self = static_cast<FreenoveESP32S3Display*>(arg);
-        auto &app = Application::GetInstance();
-
-        uint32_t last_tap = 0;
-        uint32_t down_start = 0;
-        bool down = false;
-
-        while (true) {
-            bool t;
-            uint16_t x, y;
-            self->touch_.Read(t, x, y);
-
-            uint32_t now = esp_timer_get_time() / 1000;
-
-            if (t) {
-                if (!down) {
-                    down = true;
-                    down_start = now;
-                }
-            }
-
-            if (!t && down) {
-                down = false;
-
-                uint32_t press = now - down_start;
-
-                // long tap
-                if (press > 3000) {
-                    self->EnterWifiConfigMode();
-                } else {
-                    // double tap
-                    if (now - last_tap < 250) {
-                        app.StartListening();
-                        last_tap = 0;
-                    } else {
-                        // single tap
-                        app.ToggleChatState();
-                        last_tap = now;
-                    }
-                }
-            }
-
-            vTaskDelay(pdMS_TO_TICKS(50));
-        }
     }
 
     void InitializeTouch() {
@@ -138,7 +112,13 @@ private:
             return;
         }
         ESP_LOGI(TAG, "Touch initialized successfully at 0x38");
-        xTaskCreatePinnedToCore(TouchTask, "touch_task", 4096, this, 5, nullptr, 0);
+
+        g_touch_driver = &touch_;
+        touch_indev_ = lv_indev_create();
+        lv_indev_set_type(touch_indev_, LV_INDEV_TYPE_POINTER);
+        lv_indev_set_read_cb(touch_indev_, TouchpadReadCallback);
+        lv_indev_set_disp(touch_indev_, lv_display_get_default());
+        ESP_LOGI(TAG, "LVGL pointer indev registered for Touch");
     }
 
     void InitializeI2c() {
@@ -173,6 +153,7 @@ private:
             auto &app = Application::GetInstance();
             if (app.GetDeviceState() == kDeviceStateStarting) {
                 EnterWifiConfigMode();
+                return;
             }
             app.ToggleChatState();
         });
@@ -181,7 +162,7 @@ private:
     void InitializeLcdDisplay() {
         esp_lcd_panel_io_handle_t panel_io = nullptr;
         esp_lcd_panel_handle_t panel = nullptr;
-        // 液晶屏控制IO初始化
+
         ESP_LOGD(TAG, "Install panel IO");
         esp_lcd_panel_io_spi_config_t io_config = {};
         io_config.cs_gpio_num = DISPLAY_CS_PIN;
@@ -193,7 +174,6 @@ private:
         io_config.lcd_param_bits = 8;
         ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(LCD_SPI_HOST, &io_config, &panel_io));
 
-        // 初始化液晶屏驱动芯片
         ESP_LOGD(TAG, "Install LCD driver");
         esp_lcd_panel_dev_config_t panel_config = {};
         panel_config.reset_gpio_num = DISPLAY_RST_PIN;
@@ -214,6 +194,24 @@ private:
     }
 
     void InitializeTools() {
+        auto& mcp = McpServer::GetInstance();
+        mcp.AddTool("self.games.launch", "Launch retro arcade game or games menu. Parameter `game`: 'launcher', 'tetris', or 'breakout'.",
+            PropertyList({
+                Property("game", "The game to launch: launcher, tetris, breakout", PropertyType::kString, true)
+            }),
+            [](const PropertyList& properties) -> ReturnValue {
+                std::string game = properties["game"].value;
+                if (game == "tetris") {
+                    GameManager::GetInstance().StartGame(GameType::kTetris);
+                    return "Tetris launched";
+                } else if (game == "breakout") {
+                    GameManager::GetInstance().StartGame(GameType::kBreakout);
+                    return "Breakout launched";
+                } else {
+                    GameManager::GetInstance().ShowLauncher();
+                    return "Game launcher opened";
+                }
+            });
     }
 
 public:
@@ -227,6 +225,9 @@ public:
         InitializeButtons();
         InitializeTools();
         GetBacklight()->SetBrightness(100);
+
+        // Initialize Retro Game Manager
+        GameManager::GetInstance().Init();
     }
 
     virtual Led *GetLed() override {

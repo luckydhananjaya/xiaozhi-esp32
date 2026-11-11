@@ -14,11 +14,11 @@ public:
     void Start();
     void Stop();
 
-    void SetPlayerPaddleY(int y);
+    void SetPlayerPaddleX(int x);
 
 private:
-    static const int kPaddleW = 10;
-    static const int kPaddleH = 46;
+    static const int kPaddleW = 52;
+    static const int kPaddleH = 10;
     static const int kBallSize = 8;
 
     lv_obj_t* screen_ = nullptr;
@@ -30,13 +30,13 @@ private:
     lv_obj_t* message_label_ = nullptr;
     lv_timer_t* timer_ = nullptr;
 
-    float ball_x_ = 160.0f;
-    float ball_y_ = 110.0f;
-    float ball_dx_ = 3.2f;
-    float ball_dy_ = 1.8f;
+    float ball_x_ = 116.0f;
+    float ball_y_ = 140.0f;
+    float ball_dx_ = 2.2f;
+    float ball_dy_ = 3.2f;
 
-    float player_y_ = 90.0f;
-    float ai_y_ = 90.0f;
+    float player_x_ = 94.0f;
+    float ai_x_ = 94.0f;
 
     int player_score_ = 0;
     int ai_score_ = 0;

@@ -79,7 +79,7 @@ lv_obj_t* TetrisGame::CreateScreen() {
     instance_ = new TetrisGame();
 
     lv_obj_t* scr = lv_obj_create(nullptr);
-    lv_obj_set_size(scr, 320, 240);
+    lv_obj_set_size(scr, 240, 320);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x050814), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
@@ -99,9 +99,28 @@ void TetrisGame::Destroy() {
 }
 
 void TetrisGame::InitUI(lv_obj_t* scr) {
+    // Top Bar Header
+    lv_obj_t* title = lv_label_create(scr);
+    lv_label_set_text(title, "TETRIS");
+    lv_obj_set_style_text_color(title, lv_color_hex(0x38BDF8), 0);
+    lv_obj_set_pos(title, 12, 6);
+
+    // EXIT Button top-right
+    lv_obj_t* exit_btn = lv_button_create(scr);
+    lv_obj_set_pos(exit_btn, 172, 4);
+    lv_obj_set_size(exit_btn, 60, 24);
+    lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0); // Red
+    lv_obj_set_style_radius(exit_btn, 4, 0);
+    lv_obj_add_event_cb(exit_btn, OnExitClicked, LV_EVENT_CLICKED, nullptr);
+
+    lv_obj_t* exit_lbl = lv_label_create(exit_btn);
+    lv_label_set_text(exit_lbl, "EXIT");
+    lv_obj_set_style_text_color(exit_lbl, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_center(exit_lbl);
+
     // Left Board Container (100 x 200 px)
     board_container_ = lv_obj_create(scr);
-    lv_obj_set_pos(board_container_, 12, 18);
+    lv_obj_set_pos(board_container_, 8, 34);
     lv_obj_set_size(board_container_, 104, 204);
     lv_obj_set_style_bg_color(board_container_, lv_color_hex(0x0F172A), 0);
     lv_obj_set_style_border_width(board_container_, 2, 0);
@@ -123,63 +142,31 @@ void TetrisGame::InitUI(lv_obj_t* scr) {
         }
     }
 
-    // Middle Stats Panel
-    lv_obj_t* title = lv_label_create(scr);
-    lv_label_set_text(title, "TETRIS");
-    lv_obj_set_style_text_color(title, lv_color_hex(0x38BDF8), 0);
-    lv_obj_set_pos(title, 124, 18);
-
+    // Right Stats Panel
     score_label_ = lv_label_create(scr);
     lv_label_set_text(score_label_, "SCORE\n0");
     lv_obj_set_style_text_color(score_label_, lv_color_hex(0xF8FAFC), 0);
-    lv_obj_set_pos(score_label_, 124, 46);
+    lv_obj_set_pos(score_label_, 124, 44);
 
     lines_label_ = lv_label_create(scr);
     lv_label_set_text(lines_label_, "LINES\n0");
     lv_obj_set_style_text_color(lines_label_, lv_color_hex(0xF8FAFC), 0);
-    lv_obj_set_pos(lines_label_, 124, 88);
+    lv_obj_set_pos(lines_label_, 124, 94);
 
     game_over_label_ = lv_label_create(scr);
     lv_label_set_text(game_over_label_, "");
     lv_obj_set_style_text_color(game_over_label_, lv_color_hex(0xEF4444), 0);
-    lv_obj_set_pos(game_over_label_, 124, 140);
+    lv_obj_set_pos(game_over_label_, 124, 150);
 
-    // Right Controls
-    // 1. EXIT [X] Button
-    lv_obj_t* exit_btn = lv_button_create(scr);
-    lv_obj_set_pos(exit_btn, 245, 12);
-    lv_obj_set_size(exit_btn, 65, 28);
-    lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0); // Red
-    lv_obj_set_style_radius(exit_btn, 4, 0);
-    lv_obj_add_event_cb(exit_btn, OnExitClicked, LV_EVENT_CLICKED, nullptr);
-
-    lv_obj_t* exit_lbl = lv_label_create(exit_btn);
-    lv_label_set_text(exit_lbl, "EXIT");
-    lv_obj_set_style_text_color(exit_lbl, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_center(exit_lbl);
-
-    // 2. ROTATE Button
-    lv_obj_t* rot_btn = lv_button_create(scr);
-    lv_obj_set_pos(rot_btn, 245, 48);
-    lv_obj_set_size(rot_btn, 65, 46);
-    lv_obj_set_style_bg_color(rot_btn, lv_color_hex(0x8B5CF6), 0); // Purple
-    lv_obj_set_style_radius(rot_btn, 6, 0);
-    lv_obj_add_event_cb(rot_btn, OnRotateClicked, LV_EVENT_CLICKED, nullptr);
-
-    lv_obj_t* rot_lbl = lv_label_create(rot_btn);
-    lv_label_set_text(rot_lbl, "ROTATE");
-    lv_obj_set_style_text_color(rot_lbl, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_center(rot_lbl);
-
-    // 3. Virtual D-PAD
-    // LEFT
+    // Bottom Thumb Controls (y=246..314)
+    // 1. LEFT [<]
     lv_obj_t* left_btn = lv_button_create(scr);
-    lv_obj_set_pos(left_btn, 185, 104);
-    lv_obj_set_size(left_btn, 58, 56);
+    lv_obj_set_pos(left_btn, 6, 248);
+    lv_obj_set_size(left_btn, 52, 62);
     lv_obj_set_style_bg_color(left_btn, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(left_btn, 2, 0);
     lv_obj_set_style_border_color(left_btn, lv_color_hex(0x38BDF8), 0);
-    lv_obj_set_style_radius(left_btn, 6, 0);
+    lv_obj_set_style_radius(left_btn, 8, 0);
     lv_obj_add_event_cb(left_btn, OnLeftClicked, LV_EVENT_CLICKED, nullptr);
 
     lv_obj_t* l_lbl = lv_label_create(left_btn);
@@ -187,14 +174,14 @@ void TetrisGame::InitUI(lv_obj_t* scr) {
     lv_obj_set_style_text_color(l_lbl, lv_color_hex(0x38BDF8), 0);
     lv_obj_center(l_lbl);
 
-    // RIGHT
+    // 2. RIGHT [>]
     lv_obj_t* right_btn = lv_button_create(scr);
-    lv_obj_set_pos(right_btn, 252, 104);
-    lv_obj_set_size(right_btn, 58, 56);
+    lv_obj_set_pos(right_btn, 64, 248);
+    lv_obj_set_size(right_btn, 52, 62);
     lv_obj_set_style_bg_color(right_btn, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(right_btn, 2, 0);
     lv_obj_set_style_border_color(right_btn, lv_color_hex(0x38BDF8), 0);
-    lv_obj_set_style_radius(right_btn, 6, 0);
+    lv_obj_set_style_radius(right_btn, 8, 0);
     lv_obj_add_event_cb(right_btn, OnRightClicked, LV_EVENT_CLICKED, nullptr);
 
     lv_obj_t* r_lbl = lv_label_create(right_btn);
@@ -202,27 +189,25 @@ void TetrisGame::InitUI(lv_obj_t* scr) {
     lv_obj_set_style_text_color(r_lbl, lv_color_hex(0x38BDF8), 0);
     lv_obj_center(r_lbl);
 
-    // DOWN
-    lv_obj_t* down_btn = lv_button_create(scr);
-    lv_obj_set_pos(down_btn, 185, 168);
-    lv_obj_set_size(down_btn, 58, 56);
-    lv_obj_set_style_bg_color(down_btn, lv_color_hex(0x1E293B), 0);
-    lv_obj_set_style_border_width(down_btn, 2, 0);
-    lv_obj_set_style_border_color(down_btn, lv_color_hex(0x38BDF8), 0);
-    lv_obj_set_style_radius(down_btn, 6, 0);
-    lv_obj_add_event_cb(down_btn, OnDownClicked, LV_EVENT_CLICKED, nullptr);
+    // 3. ROTATE [ROT]
+    lv_obj_t* rot_btn = lv_button_create(scr);
+    lv_obj_set_pos(rot_btn, 122, 248);
+    lv_obj_set_size(rot_btn, 56, 62);
+    lv_obj_set_style_bg_color(rot_btn, lv_color_hex(0x8B5CF6), 0); // Purple
+    lv_obj_set_style_radius(rot_btn, 8, 0);
+    lv_obj_add_event_cb(rot_btn, OnRotateClicked, LV_EVENT_CLICKED, nullptr);
 
-    lv_obj_t* d_lbl = lv_label_create(down_btn);
-    lv_label_set_text(d_lbl, "v");
-    lv_obj_set_style_text_color(d_lbl, lv_color_hex(0x38BDF8), 0);
-    lv_obj_center(d_lbl);
+    lv_obj_t* rot_lbl = lv_label_create(rot_btn);
+    lv_label_set_text(rot_lbl, "ROT");
+    lv_obj_set_style_text_color(rot_lbl, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_center(rot_lbl);
 
-    // DROP
+    // 4. DROP [DROP]
     lv_obj_t* drop_btn = lv_button_create(scr);
-    lv_obj_set_pos(drop_btn, 252, 168);
-    lv_obj_set_size(drop_btn, 58, 56);
-    lv_obj_set_style_bg_color(drop_btn, lv_color_hex(0x0284C7), 0); // Solid Cyan
-    lv_obj_set_style_radius(drop_btn, 6, 0);
+    lv_obj_set_pos(drop_btn, 182, 248);
+    lv_obj_set_size(drop_btn, 52, 62);
+    lv_obj_set_style_bg_color(drop_btn, lv_color_hex(0x0284C7), 0); // Cyan
+    lv_obj_set_style_radius(drop_btn, 8, 0);
     lv_obj_add_event_cb(drop_btn, OnDropClicked, LV_EVENT_CLICKED, nullptr);
 
     lv_obj_t* drp_lbl = lv_label_create(drop_btn);

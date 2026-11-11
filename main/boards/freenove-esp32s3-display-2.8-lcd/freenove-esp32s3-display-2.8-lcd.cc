@@ -26,6 +26,10 @@
 
 #define TAG "FreenoveESP32S3Display"
 
+bool g_is_portrait_mode = false;
+class HosyondDisplay;
+static HosyondDisplay* g_hosyond_display = nullptr;
+
 class TouchDriver {
 public:
     TouchDriver() : dev_(nullptr) {}
@@ -36,7 +40,18 @@ public:
             .scl_speed_hz = 400000,
             .scl_wait_us = 0,
         };
-        return i2c_master_bus_add_device(bus, &cfg, &dev_) == ESP_OK;
+        if (i2c_master_bus_add_device(bus, &cfg, &dev_) != ESP_OK) {
+            return false;
+        }
+
+        // Boost touch sensitivity (threshold 8 for ultra-responsive, light touch)
+        uint8_t th_cmd[] = { 0x80, 0x08 };
+        i2c_master_transmit(dev_, th_cmd, 2, 50);
+
+        // Boost active scan rate to 100Hz+ for zero lag
+        uint8_t period_cmd[] = { 0x88, 0x05 };
+        i2c_master_transmit(dev_, period_cmd, 2, 50);
+        return true;
     }
 
     bool Read(bool &touched, uint16_t &x, uint16_t &y) {
@@ -49,15 +64,30 @@ public:
         if (i2c_master_transmit_receive(dev_, &reg, 1, buf, 5, 50) != ESP_OK) return false;
 
         uint8_t points = buf[0] & 0x0F;
-        if (points == 0) return true;
+        uint8_t event = (buf[1] >> 6) & 0x03; // 0: Press, 1: Release/Lift up, 2: Held
+
+        // Filter out phantom touches when finger is lifted
+        if (points == 0 || event == 1) {
+            touched = false;
+            return true;
+        }
 
         touched = true;
         uint16_t raw_x = ((buf[1] & 0x0F) << 8) | buf[2];
         uint16_t raw_y = ((buf[3] & 0x0F) << 8) | buf[4];
 
-        // Landscape 320x240 mapping for FT6336 on 2.8" TFT:
-        x = raw_y;
-        y = (raw_x < 240) ? (239 - raw_x) : 0;
+        if (raw_x > 239) raw_x = 239;
+        if (raw_y > 319) raw_y = 319;
+
+        if (g_is_portrait_mode) {
+            // Native Portrait (240 x 320)
+            x = raw_x;
+            y = raw_y;
+        } else {
+            // Landscape (320 x 240)
+            x = raw_y;
+            y = (239 - raw_x);
+        }
         return true;
     }
 
@@ -86,7 +116,47 @@ public:
 
     virtual void SetupUI() override {
         SpiLcdDisplay::SetupUI();
+        g_hosyond_display = this;
+
+        DisplayLockGuard lock(this);
+
+        // Register Orientation callback with GameManager
+        GameManager::GetInstance().SetOrientationCallback([this](bool portrait) {
+            SetOrientation(portrait);
+        });
+
+        // Tapping anywhere on the Chatbot screen toggles voice chat
+        if (container_) {
+            lv_obj_add_flag(container_, LV_OBJ_FLAG_CLICKABLE);
+            lv_obj_add_event_cb(container_, [](lv_event_t* e) {
+                if (!GameManager::GetInstance().IsInLauncher() && !GameManager::GetInstance().IsInGame()) {
+                    Application::GetInstance().ToggleChatState();
+                }
+            }, LV_EVENT_CLICKED, nullptr);
+        }
+
         GameManager::GetInstance().Init();
+    }
+
+    void SetOrientation(bool portrait) {
+        if (g_is_portrait_mode == portrait) return;
+        g_is_portrait_mode = portrait;
+
+        DisplayLockGuard lock(this);
+        if (portrait) {
+            esp_lcd_panel_swap_xy(panel_, false);
+            esp_lcd_panel_mirror(panel_, false, false);
+            lv_display_set_resolution(display_, 240, 320);
+        } else {
+            esp_lcd_panel_swap_xy(panel_, DISPLAY_SWAP_XY);
+            esp_lcd_panel_mirror(panel_, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
+            lv_display_set_resolution(display_, 320, 240);
+        }
+        lv_obj_invalidate(lv_screen_active());
+        ESP_LOGI(TAG, "Display orientation switched to %s (w=%ld, h=%ld)",
+            portrait ? "PORTRAIT" : "LANDSCAPE",
+            lv_display_get_horizontal_resolution(display_),
+            lv_display_get_vertical_resolution(display_));
     }
 };
 

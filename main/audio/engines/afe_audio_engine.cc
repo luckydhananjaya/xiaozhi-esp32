@@ -318,7 +318,7 @@ void AfeAudioEngine::EnableDeviceAec(bool enable) {
 bool AfeAudioEngine::HasWakeWord() const { return wake_detector_ != WakeDetector::kNone; }
 
 std::vector<std::string> AfeAudioEngine::GetWakeWords() const {
-    return custom_wake_word_ ? custom_wake_word_->GetWakeWords() : wake_words_;
+    return {"Autobots, roll out!"};
 }
 
 bool AfeAudioEngine::IsWakeWordDetectionEnabled() const {
@@ -465,12 +465,7 @@ void AfeAudioEngine::HandleWakeWordResult(const afe_fetch_result_t* result) {
     }
 
     int model_index = result->wakenet_model_index - 1;
-    if (model_index < 0 || model_index >= static_cast<int>(wake_words_.size())) {
-        ESP_LOGE(TAG, "Invalid WakeNet model index: %d", result->wakenet_model_index);
-        return;
-    }
-
-    last_detected_wake_word_ = wake_words_[model_index];
+    last_detected_wake_word_ = "Autobots, roll out!";
     xEventGroupClearBits(event_group_, kWakeWordEnabled);
     // UpdateActiveState marks the AFE controls dirty; the next loop iteration
     // of ProcessingTask disables WakeNet via ApplyAfeControls.

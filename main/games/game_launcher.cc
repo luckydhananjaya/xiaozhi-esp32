@@ -36,84 +36,82 @@ static void ExitBtnEventCb(lv_event_t* e) {
 
 lv_obj_t* GameLauncher::CreateScreen() {
     lv_obj_t* scr = lv_obj_create(nullptr);
-    lv_obj_set_size(scr, 320, 240);
+    lv_obj_set_size(scr, 240, 320); // Portrait 240x320
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0F1D), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
 
-    // Top Header
+    // Top Header (240 x 34)
     lv_obj_t* header = lv_obj_create(scr);
-    lv_obj_set_size(header, 320, 36);
+    lv_obj_set_size(header, 240, 34);
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(header, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(header, 0, 0);
     lv_obj_set_style_pad_all(header, 0, 0);
-    lv_obj_set_style_pad_left(header, 12, 0);
-    lv_obj_set_style_pad_right(header, 8, 0);
     lv_obj_set_scrollbar_mode(header, LV_SCROLLBAR_MODE_OFF);
 
     lv_obj_t* title = lv_label_create(header);
-    lv_label_set_text(title, "RETRO ARCADE (8 GAMES)");
+    lv_label_set_text(title, "ARCADE (8 GAMES)");
     lv_obj_set_style_text_color(title, lv_color_hex(0xF8FAFC), 0);
-    lv_obj_align(title, LV_ALIGN_LEFT_MID, 4, 0);
+    lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
 
     // EXIT Button
     lv_obj_t* exit_btn = lv_button_create(header);
-    lv_obj_set_size(exit_btn, 65, 26);
-    lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, 0, 0);
-    lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0); // Red
+    lv_obj_set_size(exit_btn, 60, 24);
+    lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
+    lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);
     lv_obj_add_event_cb(exit_btn, ExitBtnEventCb, LV_EVENT_CLICKED, nullptr);
 
     lv_obj_t* exit_label = lv_label_create(exit_btn);
-    lv_label_set_text(exit_label, "EXIT [X]");
+    lv_label_set_text(exit_label, "EXIT");
     lv_obj_set_style_text_color(exit_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(exit_label);
 
-    // Grid Container for 8 cards
+    // Grid Container for 8 cards (240 x 286)
     lv_obj_t* grid = lv_obj_create(scr);
-    lv_obj_set_size(grid, 320, 204);
-    lv_obj_align(grid, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_set_pos(grid, 0, 34);
+    lv_obj_set_size(grid, 240, 286);
     lv_obj_set_style_bg_opa(grid, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(grid, 0, 0);
-    lv_obj_set_style_pad_all(grid, 6, 0);
+    lv_obj_set_style_pad_all(grid, 0, 0);
     lv_obj_set_scrollbar_mode(grid, LV_SCROLLBAR_MODE_OFF);
 
-    // 2 rows of 4 columns
+    // 4 rows of 2 columns
     for (size_t i = 0; i < 8; ++i) {
-        int col = i % 4;
-        int row = i / 4;
-        int x = 8 + col * 76;
-        int y = 4 + row * 96;
+        int col = i % 2;
+        int row = i / 2;
+        int x = 10 + col * 114;
+        int y = 6 + row * 68;
 
         lv_obj_t* card = lv_button_create(grid);
         lv_obj_set_pos(card, x, y);
-        lv_obj_set_size(card, 70, 90);
+        lv_obj_set_size(card, 106, 62);
         lv_obj_set_style_bg_color(card, lv_color_hex(0x1E293B), 0);
         lv_obj_set_style_border_width(card, 2, 0);
         lv_obj_set_style_border_color(card, lv_color_hex(kGames[i].color_hex), 0);
-        lv_obj_set_style_radius(card, 6, 0);
-        lv_obj_set_style_pad_all(card, 2, 0);
+        lv_obj_set_style_radius(card, 8, 0);
+        lv_obj_set_style_pad_all(card, 4, 0);
 
-        // Icon Box
+        // Icon
         lv_obj_t* icon_lbl = lv_label_create(card);
         lv_label_set_text(icon_lbl, kGames[i].icon);
         lv_obj_set_style_text_color(icon_lbl, lv_color_hex(kGames[i].color_hex), 0);
-        lv_obj_align(icon_lbl, LV_ALIGN_TOP_MID, 0, 8);
+        lv_obj_align(icon_lbl, LV_ALIGN_TOP_LEFT, 6, 4);
 
         // Title
         lv_obj_t* title_lbl = lv_label_create(card);
         lv_label_set_text(title_lbl, kGames[i].title);
         lv_obj_set_style_text_color(title_lbl, lv_color_hex(0xFFFFFF), 0);
-        lv_obj_align(title_lbl, LV_ALIGN_CENTER, 0, 4);
+        lv_obj_align(title_lbl, LV_ALIGN_TOP_LEFT, 32, 4);
 
         // Badge
         lv_obj_t* badge = lv_obj_create(card);
-        lv_obj_set_size(badge, 48, 16);
-        lv_obj_align(badge, LV_ALIGN_BOTTOM_MID, 0, -4);
+        lv_obj_set_size(badge, 52, 18);
+        lv_obj_align(badge, LV_ALIGN_BOTTOM_RIGHT, -4, -4);
         lv_obj_set_style_bg_color(badge, lv_color_hex(kGames[i].color_hex), 0);
         lv_obj_set_style_border_width(badge, 0, 0);
-        lv_obj_set_style_radius(badge, 3, 0);
+        lv_obj_set_style_radius(badge, 4, 0);
         lv_obj_set_style_pad_all(badge, 0, 0);
 
         lv_obj_t* badge_lbl = lv_label_create(badge);

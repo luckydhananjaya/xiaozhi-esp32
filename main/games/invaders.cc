@@ -23,7 +23,7 @@ lv_obj_t* InvadersGame::CreateScreen() {
     Destroy();
     instance_ = new InvadersGame();
     instance_->screen_ = lv_obj_create(nullptr);
-    lv_obj_set_size(instance_->screen_, 320, 240);
+    lv_obj_set_size(instance_->screen_, 240, 320);
     lv_obj_set_style_bg_color(instance_->screen_, lv_color_hex(0x020617), 0);
     lv_obj_set_style_pad_all(instance_->screen_, 0, 0);
     lv_obj_set_scrollbar_mode(instance_->screen_, LV_SCROLLBAR_MODE_OFF);
@@ -42,9 +42,9 @@ void InvadersGame::Destroy() {
 }
 
 void InvadersGame::InitUI(lv_obj_t* parent) {
-    // Header Bar (320 x 26)
+    // Header Bar (240 x 26)
     lv_obj_t* header = lv_obj_create(parent);
-    lv_obj_set_size(header, 320, 26);
+    lv_obj_set_size(header, 240, 26);
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(header, lv_color_hex(0x0F172A), 0);
     lv_obj_set_style_border_width(header, 0, 0);
@@ -54,11 +54,11 @@ void InvadersGame::InitUI(lv_obj_t* parent) {
     score_label_ = lv_label_create(header);
     lv_label_set_text(score_label_, "INVADERS | SCORE: 0");
     lv_obj_set_style_text_color(score_label_, lv_color_hex(0xA855F7), 0);
-    lv_obj_align(score_label_, LV_ALIGN_LEFT_MID, 10, 0);
+    lv_obj_align(score_label_, LV_ALIGN_LEFT_MID, 8, 0);
 
     lv_obj_t* exit_btn = lv_button_create(header);
-    lv_obj_set_size(exit_btn, 55, 20);
-    lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
+    lv_obj_set_size(exit_btn, 50, 20);
+    lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -4, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);
     lv_obj_add_event_cb(exit_btn, InvadersExitBtnCb, LV_EVENT_CLICKED, nullptr);
@@ -68,16 +68,16 @@ void InvadersGame::InitUI(lv_obj_t* parent) {
     lv_obj_set_style_text_color(exit_lbl, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(exit_lbl);
 
-    // Play Area (320 x 170 px) at y=26
+    // Play Area (240 x 240 px) at y=26
     play_area_ = lv_obj_create(parent);
     lv_obj_set_pos(play_area_, 0, 26);
-    lv_obj_set_size(play_area_, 320, 168);
+    lv_obj_set_size(play_area_, 240, 240);
     lv_obj_set_style_bg_color(play_area_, lv_color_hex(0x020617), 0);
     lv_obj_set_style_border_width(play_area_, 0, 0);
     lv_obj_set_style_pad_all(play_area_, 0, 0);
     lv_obj_set_scrollbar_mode(play_area_, LV_SCROLLBAR_MODE_OFF);
 
-    // Aliens (3 rows x 6 cols)
+    // Aliens (3 rows x 5 cols)
     static const uint32_t kRowColors[kRows] = { 0xEC4899, 0xA855F7, 0x06B6D4 };
     for (int r = 0; r < kRows; ++r) {
         for (int c = 0; c < kCols; ++c) {
@@ -111,23 +111,23 @@ void InvadersGame::InitUI(lv_obj_t* parent) {
     // Player Tank (28 x 12 px)
     player_obj_ = lv_obj_create(play_area_);
     lv_obj_set_size(player_obj_, 28, 12);
-    lv_obj_set_pos(player_obj_, static_cast<int32_t>(player_x_), 152);
+    lv_obj_set_pos(player_obj_, static_cast<int32_t>(player_x_), 222);
     lv_obj_set_style_bg_color(player_obj_, lv_color_hex(0x22C55E), 0);
     lv_obj_set_style_border_width(player_obj_, 0, 0);
     lv_obj_set_style_radius(player_obj_, 3, 0);
 
-    // Bottom Controls (y=196..240, h=44)
+    // Bottom Controls (y=268..320, h=52)
     lv_obj_t* bottom_bar = lv_obj_create(parent);
-    lv_obj_set_pos(bottom_bar, 0, 196);
-    lv_obj_set_size(bottom_bar, 320, 44);
+    lv_obj_set_pos(bottom_bar, 0, 268);
+    lv_obj_set_size(bottom_bar, 240, 52);
     lv_obj_set_style_bg_color(bottom_bar, lv_color_hex(0x0F172A), 0);
     lv_obj_set_style_border_width(bottom_bar, 0, 0);
     lv_obj_set_style_pad_all(bottom_bar, 0, 0);
 
     auto create_btn = [bottom_bar](const char* label, int x, int w, int action, uint32_t bg_hex) {
         lv_obj_t* btn = lv_button_create(bottom_bar);
-        lv_obj_set_pos(btn, x, 4);
-        lv_obj_set_size(btn, w, 36);
+        lv_obj_set_pos(btn, x, 6);
+        lv_obj_set_size(btn, w, 40);
         lv_obj_set_style_bg_color(btn, lv_color_hex(bg_hex), 0);
         lv_obj_set_style_radius(btn, 6, 0);
         lv_obj_add_event_cb(btn, InvadersBtnCb, LV_EVENT_CLICKED, reinterpret_cast<void*>(static_cast<intptr_t>(action)));
@@ -138,9 +138,9 @@ void InvadersGame::InitUI(lv_obj_t* parent) {
         lv_obj_center(lbl);
     };
 
-    create_btn("< LEFT", 12, 80, 0, 0x334155);
-    create_btn("RIGHT >", 102, 80, 1, 0x334155);
-    create_btn("FIRE !", 200, 108, 2, 0xDC2626);
+    create_btn("< LEFT", 6, 72, 0, 0x334155);
+    create_btn("RIGHT >", 84, 72, 1, 0x334155);
+    create_btn("FIRE !", 162, 72, 2, 0xDC2626);
 
     // Game Over Label
     game_over_label_ = lv_label_create(play_area_);
@@ -164,8 +164,8 @@ void InvadersGame::Stop() {
 }
 
 void InvadersGame::ResetGame() {
-    player_x_ = 146.0f;
-    fleet_x_ = 20.0f;
+    player_x_ = 106.0f;
+    fleet_x_ = 16.0f;
     fleet_y_ = 15.0f;
     fleet_dx_ = 1.2f;
     score_ = 0;
@@ -198,14 +198,14 @@ void InvadersGame::MoveLeft() {
     if (game_over_) return;
     player_x_ -= 12.0f;
     if (player_x_ < 4.0f) player_x_ = 4.0f;
-    lv_obj_set_pos(player_obj_, static_cast<int32_t>(player_x_), 152);
+    lv_obj_set_pos(player_obj_, static_cast<int32_t>(player_x_), 222);
 }
 
 void InvadersGame::MoveRight() {
     if (game_over_) return;
     player_x_ += 12.0f;
-    if (player_x_ > 288.0f) player_x_ = 288.0f;
-    lv_obj_set_pos(player_obj_, static_cast<int32_t>(player_x_), 152);
+    if (player_x_ > 208.0f) player_x_ = 208.0f;
+    lv_obj_set_pos(player_obj_, static_cast<int32_t>(player_x_), 222);
 }
 
 void InvadersGame::Fire() {
@@ -218,7 +218,7 @@ void InvadersGame::Fire() {
         if (!player_bullets_[i].active) {
             player_bullets_[i].active = true;
             player_bullets_[i].x = player_x_ + 13.0f;
-            player_bullets_[i].y = 146.0f;
+            player_bullets_[i].y = 216.0f;
             lv_obj_remove_flag(player_bullet_objs_[i], LV_OBJ_FLAG_HIDDEN);
             break;
         }
@@ -231,13 +231,13 @@ void InvadersGame::UpdateGame() {
     // Move fleet
     fleet_x_ += fleet_dx_;
     const float kFleetW = kCols * 36.0f;
-    if (fleet_x_ + kFleetW > 316.0f || fleet_x_ < 4.0f) {
+    if (fleet_x_ + kFleetW > 236.0f || fleet_x_ < 4.0f) {
         fleet_dx_ = -fleet_dx_;
-        fleet_y_ += 6.0f; // step down
+        fleet_y_ += 8.0f; // step down
     }
 
     // Alien reaches player level
-    if (fleet_y_ + (kRows * 22.0f) >= 148.0f) {
+    if (fleet_y_ + (kRows * 22.0f) >= 218.0f) {
         game_over_ = true;
         lv_obj_remove_flag(game_over_label_, LV_OBJ_FLAG_HIDDEN);
         return;
@@ -297,10 +297,10 @@ void InvadersGame::UpdateGame() {
     for (int i = 0; i < kMaxAlienBullets; ++i) {
         if (alien_bullets_[i].active) {
             alien_bullets_[i].y += 3.0f;
-            if (alien_bullets_[i].y > 165.0f) {
+            if (alien_bullets_[i].y > 235.0f) {
                 alien_bullets_[i].active = false;
                 lv_obj_add_flag(alien_bullet_objs_[i], LV_OBJ_FLAG_HIDDEN);
-            } else if (alien_bullets_[i].y >= 150.0f && alien_bullets_[i].y <= 164.0f &&
+            } else if (alien_bullets_[i].y >= 218.0f && alien_bullets_[i].y <= 234.0f &&
                        alien_bullets_[i].x >= player_x_ && alien_bullets_[i].x <= player_x_ + 28.0f) {
                 // Hit player!
                 game_over_ = true;

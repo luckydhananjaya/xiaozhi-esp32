@@ -21,7 +21,7 @@ lv_obj_t* Puzzle2048Game::CreateScreen() {
     Destroy();
     instance_ = new Puzzle2048Game();
     instance_->screen_ = lv_obj_create(nullptr);
-    lv_obj_set_size(instance_->screen_, 240, 320);
+    lv_obj_set_size(instance_->screen_, 320, 240);
     lv_obj_set_style_bg_color(instance_->screen_, lv_color_hex(0x0F172A), 0);
     lv_obj_set_style_pad_all(instance_->screen_, 0, 0);
     lv_obj_set_scrollbar_mode(instance_->screen_, LV_SCROLLBAR_MODE_OFF);
@@ -56,9 +56,9 @@ uint32_t Puzzle2048Game::GetTileColor(int val) {
 }
 
 void Puzzle2048Game::InitUI(lv_obj_t* parent) {
-    // Header (240 x 26)
+    // Header (320 x 28)
     lv_obj_t* header = lv_obj_create(parent);
-    lv_obj_set_size(header, 240, 26);
+    lv_obj_set_size(header, 320, 28);
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(header, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(header, 0, 0);
@@ -67,11 +67,11 @@ void Puzzle2048Game::InitUI(lv_obj_t* parent) {
     score_label_ = lv_label_create(header);
     lv_label_set_text(score_label_, "2048 | SCORE: 0");
     lv_obj_set_style_text_color(score_label_, lv_color_hex(0xFACC15), 0);
-    lv_obj_align(score_label_, LV_ALIGN_LEFT_MID, 10, 0);
+    lv_obj_align(score_label_, LV_ALIGN_LEFT_MID, 12, 0);
 
     lv_obj_t* exit_btn = lv_button_create(header);
-    lv_obj_set_size(exit_btn, 50, 20);
-    lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -4, 0);
+    lv_obj_set_size(exit_btn, 60, 22);
+    lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);
     lv_obj_add_event_cb(exit_btn, PuzzleExitBtnCb, LV_EVENT_CLICKED, nullptr);
@@ -81,21 +81,21 @@ void Puzzle2048Game::InitUI(lv_obj_t* parent) {
     lv_obj_set_style_text_color(exit_lbl, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(exit_lbl);
 
-    // 4x4 Grid Container (216 x 216) at x=12, y=32
+    // 4x4 Grid Container (194 x 194) at x=8, y=36
     grid_container_ = lv_obj_create(parent);
-    lv_obj_set_pos(grid_container_, 12, 32);
-    lv_obj_set_size(grid_container_, 216, 216);
+    lv_obj_set_pos(grid_container_, 10, 36);
+    lv_obj_set_size(grid_container_, 196, 196);
     lv_obj_set_style_bg_color(grid_container_, lv_color_hex(0x020617), 0);
     lv_obj_set_style_border_width(grid_container_, 2, 0);
     lv_obj_set_style_border_color(grid_container_, lv_color_hex(0x334155), 0);
     lv_obj_set_style_radius(grid_container_, 6, 0);
-    lv_obj_set_style_pad_all(grid_container_, 2, 0);
+    lv_obj_set_style_pad_all(grid_container_, 4, 0);
 
     for (int r = 0; r < kSize; ++r) {
         for (int c = 0; c < kSize; ++c) {
             lv_obj_t* tile = lv_obj_create(grid_container_);
-            lv_obj_set_pos(tile, 4 + c * 52, 4 + r * 52);
-            lv_obj_set_size(tile, 48, 48);
+            lv_obj_set_pos(tile, 4 + c * 46, 4 + r * 46);
+            lv_obj_set_size(tile, 42, 42);
             lv_obj_set_style_bg_color(tile, lv_color_hex(0x1E293B), 0);
             lv_obj_set_style_border_width(tile, 0, 0);
             lv_obj_set_style_radius(tile, 4, 0);
@@ -111,13 +111,13 @@ void Puzzle2048Game::InitUI(lv_obj_t* parent) {
         }
     }
 
-    // Controls D-Pad at bottom (y=254..314)
+    // Controls D-Pad on right (x=215..315)
     auto create_dir_btn = [parent](const char* label, int x, int y, int dir) {
         lv_obj_t* btn = lv_button_create(parent);
         lv_obj_set_pos(btn, x, y);
-        lv_obj_set_size(btn, 44, 28);
+        lv_obj_set_size(btn, 44, 44);
         lv_obj_set_style_bg_color(btn, lv_color_hex(0x334155), 0);
-        lv_obj_set_style_radius(btn, 6, 0);
+        lv_obj_set_style_radius(btn, 8, 0);
         lv_obj_add_event_cb(btn, PuzzleDirBtnCb, LV_EVENT_CLICKED, reinterpret_cast<void*>(static_cast<intptr_t>(dir)));
 
         lv_obj_t* lbl = lv_label_create(btn);
@@ -126,10 +126,10 @@ void Puzzle2048Game::InitUI(lv_obj_t* parent) {
         lv_obj_center(lbl);
     };
 
-    create_dir_btn("^", 98, 254, 0);   // UP
-    create_dir_btn("<", 48, 284, 2);   // LEFT
-    create_dir_btn("v", 98, 284, 1);   // DOWN
-    create_dir_btn(">", 148, 284, 3);  // RIGHT
+    create_dir_btn("^", 248, 52, 0);   // UP
+    create_dir_btn("<", 218, 102, 2);  // LEFT
+    create_dir_btn(">", 268, 102, 3);  // RIGHT
+    create_dir_btn("v", 248, 152, 1);  // DOWN
 
     game_over_label_ = lv_label_create(grid_container_);
     lv_label_set_text(game_over_label_, "GAME OVER!\nTAP ANY DIR");

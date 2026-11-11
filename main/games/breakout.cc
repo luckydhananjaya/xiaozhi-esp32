@@ -29,7 +29,7 @@ lv_obj_t* BreakoutGame::CreateScreen() {
     instance_ = new BreakoutGame();
 
     lv_obj_t* scr = lv_obj_create(nullptr);
-    lv_obj_set_size(scr, 240, 320);
+    lv_obj_set_size(scr, 320, 240);
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x050814), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
@@ -51,17 +51,17 @@ void BreakoutGame::Destroy() {
 void BreakoutGame::InitUI(lv_obj_t* scr) {
     // Top Bar
     lv_obj_t* top_bar = lv_obj_create(scr);
-    lv_obj_set_size(top_bar, 240, 32);
+    lv_obj_set_size(top_bar, 320, 32);
     lv_obj_align(top_bar, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(top_bar, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(top_bar, 0, 0);
     lv_obj_set_style_pad_all(top_bar, 0, 0);
-    lv_obj_set_style_pad_left(top_bar, 8, 0);
-    lv_obj_set_style_pad_right(top_bar, 6, 0);
+    lv_obj_set_style_pad_left(top_bar, 10, 0);
+    lv_obj_set_style_pad_right(top_bar, 8, 0);
     lv_obj_set_scrollbar_mode(top_bar, LV_SCROLLBAR_MODE_OFF);
 
     score_label_ = lv_label_create(top_bar);
-    lv_label_set_text(score_label_, "SCR: 0");
+    lv_label_set_text(score_label_, "SCORE: 0");
     lv_obj_set_style_text_color(score_label_, lv_color_hex(0xF8FAFC), 0);
     lv_obj_align(score_label_, LV_ALIGN_LEFT_MID, 0, 0);
 
@@ -72,7 +72,7 @@ void BreakoutGame::InitUI(lv_obj_t* scr) {
 
     // Red EXIT button
     lv_obj_t* exit_btn = lv_button_create(top_bar);
-    lv_obj_set_size(exit_btn, 52, 22);
+    lv_obj_set_size(exit_btn, 60, 24);
     lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, 0, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);
@@ -83,16 +83,16 @@ void BreakoutGame::InitUI(lv_obj_t* scr) {
     lv_obj_set_style_text_color(exit_lbl, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(exit_lbl);
 
-    // Create Bricks (5 rows x 6 cols)
-    const int b_w = 32;
-    const int b_h = 12;
+    // Create Bricks (5 rows x 8 cols)
+    const int b_w = 34;
+    const int b_h = 10;
     const int start_x = 10;
-    const int start_y = 44;
+    const int start_y = 38;
 
     for (int r = 0; r < kBrickRows; ++r) {
         for (int c = 0; c < kBrickCols; ++c) {
             lv_obj_t* b = lv_obj_create(scr);
-            lv_obj_set_pos(b, start_x + c * 37, start_y + r * 16);
+            lv_obj_set_pos(b, start_x + c * 38, start_y + r * 14);
             lv_obj_set_size(b, b_w, b_h);
             lv_obj_set_style_bg_color(b, lv_color_hex(kRowColors[r]), 0);
             lv_obj_set_style_radius(b, 2, 0);
@@ -105,7 +105,7 @@ void BreakoutGame::InitUI(lv_obj_t* scr) {
 
     // Paddle
     paddle_obj_ = lv_obj_create(scr);
-    lv_obj_set_pos(paddle_obj_, paddle_x_, 265);
+    lv_obj_set_pos(paddle_obj_, paddle_x_, 195);
     lv_obj_set_size(paddle_obj_, kPaddleWidth, kPaddleHeight);
     lv_obj_set_style_bg_color(paddle_obj_, lv_color_hex(0x38BDF8), 0); // Cyan
     lv_obj_set_style_radius(paddle_obj_, 4, 0);
@@ -127,10 +127,10 @@ void BreakoutGame::InitUI(lv_obj_t* scr) {
     lv_obj_set_style_text_color(message_label_, lv_color_hex(0xEAB308), 0);
     lv_obj_align(message_label_, LV_ALIGN_CENTER, 0, 30);
 
-    // Bottom Touch Area (Touch anywhere at y >= 160 to drag paddle)
+    // Bottom Touch Area (Touch anywhere at y >= 150 to drag paddle)
     touch_area_ = lv_obj_create(scr);
-    lv_obj_set_pos(touch_area_, 0, 160);
-    lv_obj_set_size(touch_area_, 240, 160);
+    lv_obj_set_pos(touch_area_, 0, 150);
+    lv_obj_set_size(touch_area_, 320, 90);
     lv_obj_set_style_bg_opa(touch_area_, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(touch_area_, 0, 0);
     lv_obj_set_style_pad_all(touch_area_, 0, 0);
@@ -152,14 +152,14 @@ void BreakoutGame::TouchEventCallback(lv_event_t* e) {
 
 void BreakoutGame::SetPaddleX(int x) {
     if (x < 4) x = 4;
-    if (x > 240 - kPaddleWidth - 4) x = 240 - kPaddleWidth - 4;
+    if (x > 320 - kPaddleWidth - 4) x = 320 - kPaddleWidth - 4;
     paddle_x_ = x;
-    lv_obj_set_pos(paddle_obj_, paddle_x_, 265);
+    lv_obj_set_pos(paddle_obj_, paddle_x_, 195);
 }
 
 void BreakoutGame::ResetBall() {
     ball_x_ = paddle_x_ + kPaddleWidth / 2 - kBallSize / 2;
-    ball_y_ = 245.0f;
+    ball_y_ = 175.0f;
     ball_dx_ = (esp_random() % 2 == 0) ? 2.5f : -2.5f;
     ball_dy_ = -2.8f;
     lv_obj_set_pos(ball_obj_, static_cast<int>(ball_x_), static_cast<int>(ball_y_));
@@ -214,8 +214,8 @@ void BreakoutGame::UpdatePhysics() {
     if (ball_x_ <= 4) {
         ball_x_ = 4;
         ball_dx_ = -ball_dx_;
-    } else if (ball_x_ >= 240 - kBallSize - 4) {
-        ball_x_ = 240 - kBallSize - 4;
+    } else if (ball_x_ >= 320 - kBallSize - 4) {
+        ball_x_ = 320 - kBallSize - 4;
         ball_dx_ = -ball_dx_;
     }
 
@@ -225,9 +225,9 @@ void BreakoutGame::UpdatePhysics() {
     }
 
     // Paddle collision
-    if (ball_y_ + kBallSize >= 265 && ball_y_ <= 275) {
+    if (ball_y_ + kBallSize >= 195 && ball_y_ <= 205) {
         if (ball_x_ + kBallSize >= paddle_x_ && ball_x_ <= paddle_x_ + kPaddleWidth) {
-            ball_y_ = 265 - kBallSize;
+            ball_y_ = 195 - kBallSize;
             float hit_pos = (ball_x_ + kBallSize / 2.0f) - (paddle_x_ + kPaddleWidth / 2.0f);
             float norm = hit_pos / (kPaddleWidth / 2.0f);
             ball_dx_ = norm * 3.5f;
@@ -236,7 +236,7 @@ void BreakoutGame::UpdatePhysics() {
     }
 
     // Bottom loss
-    if (ball_y_ > 295) {
+    if (ball_y_ > 225) {
         lives_--;
         char buf[32];
         snprintf(buf, sizeof(buf), "LIVES: %d", lives_);

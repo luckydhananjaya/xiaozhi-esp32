@@ -26,8 +26,8 @@ public:
 
 private:
     static const int kRows = 3;
-    static const int kCols = 5;
-    static const int kAlienW = 24;
+    static const int kCols = 6;
+    static const int kAlienW = 20;
     static const int kAlienH = 14;
 
     lv_obj_t* screen_ = nullptr;

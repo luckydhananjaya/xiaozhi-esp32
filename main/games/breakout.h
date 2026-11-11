@@ -18,9 +18,9 @@ public:
 
 private:
     static const int kBrickRows = 5;
-    static const int kBrickCols = 6;
-    static const int kPaddleWidth = 50;
-    static const int kPaddleHeight = 12;
+    static const int kBrickCols = 8;
+    static const int kPaddleWidth = 56;
+    static const int kPaddleHeight = 10;
     static const int kBallSize = 8;
 
     lv_obj_t* screen_ = nullptr;

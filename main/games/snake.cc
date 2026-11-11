@@ -26,7 +26,7 @@ lv_obj_t* SnakeGame::CreateScreen() {
     Destroy();
     instance_ = new SnakeGame();
     instance_->screen_ = lv_obj_create(nullptr);
-    lv_obj_set_size(instance_->screen_, 240, 320);
+    lv_obj_set_size(instance_->screen_, 320, 240);
     lv_obj_set_style_bg_color(instance_->screen_, lv_color_hex(0x0A0F1D), 0);
     lv_obj_set_style_pad_all(instance_->screen_, 0, 0);
     lv_obj_set_scrollbar_mode(instance_->screen_, LV_SCROLLBAR_MODE_OFF);
@@ -45,9 +45,9 @@ void SnakeGame::Destroy() {
 }
 
 void SnakeGame::InitUI(lv_obj_t* parent) {
-    // Top Bar (240 x 28)
+    // Top Bar (320 x 28)
     lv_obj_t* top_bar = lv_obj_create(parent);
-    lv_obj_set_size(top_bar, 240, 28);
+    lv_obj_set_size(top_bar, 320, 28);
     lv_obj_align(top_bar, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(top_bar, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(top_bar, 0, 0);
@@ -60,7 +60,7 @@ void SnakeGame::InitUI(lv_obj_t* parent) {
     lv_obj_align(score_label_, LV_ALIGN_LEFT_MID, 10, 0);
 
     lv_obj_t* exit_btn = lv_button_create(top_bar);
-    lv_obj_set_size(exit_btn, 52, 22);
+    lv_obj_set_size(exit_btn, 60, 22);
     lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);
@@ -71,9 +71,9 @@ void SnakeGame::InitUI(lv_obj_t* parent) {
     lv_obj_set_style_text_color(exit_lbl, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(exit_lbl);
 
-    // Board container (220 x 220 px) at x=10, y=32
+    // Board container (222 x 167 px) at x=6, y=34
     board_ = lv_obj_create(parent);
-    lv_obj_set_pos(board_, 10, 32);
+    lv_obj_set_pos(board_, 6, 34);
     lv_obj_set_size(board_, kGridWidth * kCellSize + 4, kGridHeight * kCellSize + 4);
     lv_obj_set_style_bg_color(board_, lv_color_hex(0x020617), 0);
     lv_obj_set_style_border_width(board_, 2, 0);
@@ -100,11 +100,11 @@ void SnakeGame::InitUI(lv_obj_t* parent) {
     lv_obj_center(game_over_label_);
     lv_obj_add_flag(game_over_label_, LV_OBJ_FLAG_HIDDEN);
 
-    // Controls D-Pad at bottom (y=254..314)
+    // Controls D-Pad on the right (x=234..315, y=35..235)
     auto create_dir_btn = [parent](const char* label, int x, int y, int dir) {
         lv_obj_t* btn = lv_button_create(parent);
         lv_obj_set_pos(btn, x, y);
-        lv_obj_set_size(btn, 44, 28);
+        lv_obj_set_size(btn, 38, 38);
         lv_obj_set_style_bg_color(btn, lv_color_hex(0x334155), 0);
         lv_obj_set_style_radius(btn, 6, 0);
         lv_obj_set_style_pad_all(btn, 0, 0);
@@ -117,10 +117,10 @@ void SnakeGame::InitUI(lv_obj_t* parent) {
         return btn;
     };
 
-    create_dir_btn("^", 98, 254, 0);   // UP
-    create_dir_btn("<", 48, 284, 2);   // LEFT
-    create_dir_btn("v", 98, 284, 1);   // DOWN
-    create_dir_btn(">", 148, 284, 3);  // RIGHT
+    create_dir_btn("^", 258, 45, 0);   // UP
+    create_dir_btn("<", 236, 88, 2);   // LEFT
+    create_dir_btn(">", 280, 88, 3);   // RIGHT
+    create_dir_btn("v", 258, 131, 1);  // DOWN
 }
 
 void SnakeGame::Start() {

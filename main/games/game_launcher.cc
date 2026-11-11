@@ -36,14 +36,14 @@ static void ExitBtnEventCb(lv_event_t* e) {
 
 lv_obj_t* GameLauncher::CreateScreen() {
     lv_obj_t* scr = lv_obj_create(nullptr);
-    lv_obj_set_size(scr, 240, 320); // Portrait 240x320
+    lv_obj_set_size(scr, 320, 240); // 320x240 Landscape
     lv_obj_set_style_bg_color(scr, lv_color_hex(0x0A0F1D), 0);
     lv_obj_set_style_pad_all(scr, 0, 0);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
 
-    // Top Header (240 x 34)
+    // Top Header (320 x 30)
     lv_obj_t* header = lv_obj_create(scr);
-    lv_obj_set_size(header, 240, 34);
+    lv_obj_set_size(header, 320, 30);
     lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(header, lv_color_hex(0x1E293B), 0);
     lv_obj_set_style_border_width(header, 0, 0);
@@ -51,14 +51,14 @@ lv_obj_t* GameLauncher::CreateScreen() {
     lv_obj_set_scrollbar_mode(header, LV_SCROLLBAR_MODE_OFF);
 
     lv_obj_t* title = lv_label_create(header);
-    lv_label_set_text(title, "ARCADE");
+    lv_label_set_text(title, "RETRO ARCADE");
     lv_obj_set_style_text_color(title, lv_color_hex(0xF8FAFC), 0);
-    lv_obj_align(title, LV_ALIGN_LEFT_MID, 10, 0);
+    lv_obj_align(title, LV_ALIGN_LEFT_MID, 12, 0);
 
     // SETTINGS Button
     lv_obj_t* set_btn = lv_button_create(header);
-    lv_obj_set_size(set_btn, 48, 24);
-    lv_obj_align(set_btn, LV_ALIGN_RIGHT_MID, -66, 0);
+    lv_obj_set_size(set_btn, 48, 22);
+    lv_obj_align(set_btn, LV_ALIGN_RIGHT_MID, -64, 0);
     lv_obj_set_style_bg_color(set_btn, lv_color_hex(0x0284C7), 0);
     lv_obj_set_style_radius(set_btn, 4, 0);
     lv_obj_add_event_cb(set_btn, [](lv_event_t* e) {
@@ -72,7 +72,7 @@ lv_obj_t* GameLauncher::CreateScreen() {
 
     // EXIT Button
     lv_obj_t* exit_btn = lv_button_create(header);
-    lv_obj_set_size(exit_btn, 54, 24);
+    lv_obj_set_size(exit_btn, 52, 22);
     lv_obj_align(exit_btn, LV_ALIGN_RIGHT_MID, -6, 0);
     lv_obj_set_style_bg_color(exit_btn, lv_color_hex(0xDC2626), 0);
     lv_obj_set_style_radius(exit_btn, 4, 0);
@@ -83,25 +83,25 @@ lv_obj_t* GameLauncher::CreateScreen() {
     lv_obj_set_style_text_color(exit_label, lv_color_hex(0xFFFFFF), 0);
     lv_obj_center(exit_label);
 
-    // Grid Container for 8 cards (240 x 286)
+    // Grid Container for 8 cards (320 x 206)
     lv_obj_t* grid = lv_obj_create(scr);
-    lv_obj_set_pos(grid, 0, 34);
-    lv_obj_set_size(grid, 240, 286);
+    lv_obj_set_pos(grid, 0, 32);
+    lv_obj_set_size(grid, 320, 206);
     lv_obj_set_style_bg_opa(grid, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(grid, 0, 0);
     lv_obj_set_style_pad_all(grid, 0, 0);
     lv_obj_set_scrollbar_mode(grid, LV_SCROLLBAR_MODE_OFF);
 
-    // 4 rows of 2 columns
+    // 2 rows of 4 columns
     for (size_t i = 0; i < 8; ++i) {
-        int col = i % 2;
-        int row = i / 2;
-        int x = 10 + col * 114;
-        int y = 6 + row * 68;
+        int col = i % 4;
+        int row = i / 4;
+        int x = 8 + col * 78;
+        int y = 6 + row * 98;
 
         lv_obj_t* card = lv_button_create(grid);
         lv_obj_set_pos(card, x, y);
-        lv_obj_set_size(card, 106, 62);
+        lv_obj_set_size(card, 72, 92);
         lv_obj_set_style_bg_color(card, lv_color_hex(0x1E293B), 0);
         lv_obj_set_style_border_width(card, 2, 0);
         lv_obj_set_style_border_color(card, lv_color_hex(kGames[i].color_hex), 0);
@@ -112,18 +112,18 @@ lv_obj_t* GameLauncher::CreateScreen() {
         lv_obj_t* icon_lbl = lv_label_create(card);
         lv_label_set_text(icon_lbl, kGames[i].icon);
         lv_obj_set_style_text_color(icon_lbl, lv_color_hex(kGames[i].color_hex), 0);
-        lv_obj_align(icon_lbl, LV_ALIGN_TOP_LEFT, 6, 4);
+        lv_obj_align(icon_lbl, LV_ALIGN_TOP_MID, 0, 4);
 
         // Title
         lv_obj_t* title_lbl = lv_label_create(card);
         lv_label_set_text(title_lbl, kGames[i].title);
         lv_obj_set_style_text_color(title_lbl, lv_color_hex(0xFFFFFF), 0);
-        lv_obj_align(title_lbl, LV_ALIGN_TOP_LEFT, 32, 4);
+        lv_obj_align(title_lbl, LV_ALIGN_CENTER, 0, -2);
 
         // Badge
         lv_obj_t* badge = lv_obj_create(card);
-        lv_obj_set_size(badge, 52, 18);
-        lv_obj_align(badge, LV_ALIGN_BOTTOM_RIGHT, -4, -4);
+        lv_obj_set_size(badge, 48, 18);
+        lv_obj_align(badge, LV_ALIGN_BOTTOM_MID, 0, -4);
         lv_obj_set_style_bg_color(badge, lv_color_hex(kGames[i].color_hex), 0);
         lv_obj_set_style_border_width(badge, 0, 0);
         lv_obj_set_style_radius(badge, 4, 0);

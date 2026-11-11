@@ -3,7 +3,6 @@
 
 #include <lvgl.h>
 #include <string>
-#include <functional>
 
 enum class GameType {
     kNone,
@@ -32,13 +31,9 @@ public:
     bool IsInGame() const { return current_game_ != GameType::kNone; }
     bool IsInLauncher() const { return in_launcher_; }
 
-    void SetOrientationCallback(std::function<void(bool portrait)> cb) { orientation_callback_ = cb; }
-
 private:
     GameManager();
     ~GameManager();
-
-    std::function<void(bool portrait)> orientation_callback_ = nullptr;
 
     lv_obj_t* chatbot_screen_ = nullptr;
     lv_obj_t* launcher_screen_ = nullptr;
@@ -47,8 +42,6 @@ private:
 
     GameType current_game_ = GameType::kNone;
     bool in_launcher_ = false;
-
-    void CreateFloatingGamesButton();
 };
 
 #endif // GAME_MANAGER_H

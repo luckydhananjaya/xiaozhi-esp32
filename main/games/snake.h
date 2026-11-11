@@ -24,9 +24,9 @@ public:
     void ChangeDirection(int dx, int dy);
 
 private:
-    static const int kGridWidth = 18;
-    static const int kGridHeight = 18;
-    static const int kCellSize = 12; // 216 x 216 px
+    static const int kGridWidth = 20;
+    static const int kGridHeight = 15;
+    static const int kCellSize = 11; // 220 x 165 px
 
     lv_obj_t* screen_ = nullptr;
     lv_obj_t* board_ = nullptr;

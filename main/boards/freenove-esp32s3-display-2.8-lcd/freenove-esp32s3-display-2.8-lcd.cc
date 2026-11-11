@@ -120,7 +120,24 @@ private:
     }
 
     void InitializeTouch() {
-        if (!touch_.Init(codec_i2c_bus_, 0x38)) return;
+        // Reset capacitive touch controller (FT6336G / CST816 on GPIO 18)
+        gpio_config_t io_conf = {};
+        io_conf.intr_type = GPIO_INTR_DISABLE;
+        io_conf.mode = GPIO_MODE_OUTPUT;
+        io_conf.pin_bit_mask = (1ULL << GPIO_NUM_18);
+        io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+        gpio_config(&io_conf);
+        gpio_set_level(GPIO_NUM_18, 0);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        gpio_set_level(GPIO_NUM_18, 1);
+        vTaskDelay(pdMS_TO_TICKS(50));
+
+        if (!touch_.Init(codec_i2c_bus_, 0x38)) {
+            ESP_LOGE(TAG, "Touch initialization failed at 0x38");
+            return;
+        }
+        ESP_LOGI(TAG, "Touch initialized successfully at 0x38");
         xTaskCreatePinnedToCore(TouchTask, "touch_task", 4096, this, 5, nullptr, 0);
     }
 

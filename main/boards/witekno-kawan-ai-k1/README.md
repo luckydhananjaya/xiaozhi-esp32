@@ -27,12 +27,14 @@ It uploads `build/merged-binary.bin`.
 Write it at offset `0x0`:
 
 ```sh
-esptool.py --chip esp32s3 -b 460800 --before default_reset --after hard_reset \
-  write_flash --flash_mode qio --flash_freq 80m --flash_size 16MB \
+python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset \
+  write-flash --flash-mode dio --flash-freq 80m --flash-size 16MB \
   0x0 merged-binary.bin
 ```
 
-Flash mode and frequency follow `sdkconfig.defaults.esp32s3` (`QIO`, 80 MHz).
+The image is 16 MB at 80 MHz. `sdkconfig` selects QIO, and the ESP-IDF 6.1
+merge step writes the esptool mode as DIO (`CONFIG_ESPTOOLPY_FLASHMODE="dio"`).
+Use that mode when flashing the merged file.
 
 ## Still open
 

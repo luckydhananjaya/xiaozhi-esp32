@@ -12,6 +12,7 @@
 #include "kawan_menu.h"
 #include "kawan_video.h"
 #include "mcp_server.h"
+#include "settings.h"
 #include "wifi_board.h"
 
 #include <driver/gpio.h>
@@ -29,90 +30,44 @@
 
 #define TAG "WiteknoKawanAiK1"
 
-// Stock 78/esp_lcd_nv3023 init clocks a 16-byte gamma burst straight out of
-// flash and then command 0x2C (RAMWR) with no pixels. On this panel the SPI
-// master never finishes that transfer: polling waits forever, the task
-// watchdog is not set to panic, and nothing after the "3Ah overwritten"
-// warning is printed. Bytes match the component's 0.85" sequence, sent one
-// register at a time from internal RAM, with no RAMWR. 0x3A stays 0x05,
-// which is the value the phase-1 image brought the panel up with.
+// No factory command dump was in the pin notes. This is the 78/esp_lcd_nv3023
+// sequence the phase-1 image used: command 0x70 / 0xA0 take the 16 gamma bytes
+// as one parameter block, not as registers 0x71..0xAF. Buffers live in
+// internal DRAM so the SPI DMA read is not from flash. Command 0x2C (RAMWR)
+// is omitted; a zero-length pixel write is what wedged the SPI master.
 namespace {
-uint8_t kA5[] = {0xa5};
-uint8_t k09[] = {0x09};
-uint8_t k05[] = {0x05};
-uint8_t k00[] = {0x00};
-uint8_t k03[] = {0x03};
-uint8_t k04[] = {0x04};
-uint8_t k0f[] = {0x0f};
-uint8_t k34[] = {0x34};
-uint8_t k30[] = {0x30};
-uint8_t k16[] = {0x16};
-uint8_t k0a[] = {0x0a};
-uint8_t k27[] = {0x27};
-uint8_t k63[] = {0x63};
-uint8_t k81[] = {0x81};
-uint8_t k10[] = {0x10};
-uint8_t k01[] = {0x01};
-uint8_t kGammaPos[16] = {0x09, 0x1d, 0x14, 0x0a, 0x11, 0x16, 0x38, 0x0b,
-                         0x08, 0x3e, 0x07, 0x0d, 0x16, 0x0f, 0x14, 0x05};
-uint8_t kGammaNeg[16] = {0x04, 0x28, 0x0c, 0x11, 0x0b, 0x23, 0x45, 0x07,
-                         0x0a, 0x3b, 0x0d, 0x18, 0x14, 0x0f, 0x19, 0x08};
+alignas(4) uint8_t kA5[] = {0xa5};
+alignas(4) uint8_t k09[] = {0x09};
+alignas(4) uint8_t k05[] = {0x05};
+alignas(4) uint8_t k00[] = {0x00};
+alignas(4) uint8_t k03[] = {0x03};
+alignas(4) uint8_t k04[] = {0x04};
+alignas(4) uint8_t k0f[] = {0x0f};
+alignas(4) uint8_t k34[] = {0x34};
+alignas(4) uint8_t k30[] = {0x30};
+alignas(4) uint8_t k16[] = {0x16};
+alignas(4) uint8_t k0a[] = {0x0a};
+alignas(4) uint8_t k27[] = {0x27};
+alignas(4) uint8_t k63[] = {0x63};
+alignas(4) uint8_t k81[] = {0x81};
+alignas(4) uint8_t k10[] = {0x10};
+alignas(4) uint8_t k01[] = {0x01};
+alignas(4) uint8_t kGammaPos[16] = {0x09, 0x1d, 0x14, 0x0a, 0x11, 0x16, 0x38, 0x0b,
+                                    0x08, 0x3e, 0x07, 0x0d, 0x16, 0x0f, 0x14, 0x05};
+alignas(4) uint8_t kGammaNeg[16] = {0x04, 0x28, 0x0c, 0x11, 0x0b, 0x23, 0x45, 0x07,
+                                    0x0a, 0x3b, 0x0d, 0x18, 0x14, 0x0f, 0x19, 0x08};
 
 const nv3023_lcd_init_cmd_t kNv3023Init[] = {
-    {0xff, kA5, 1, 0},
-    {0x3e, k09, 1, 0},
-    {0x3a, k05, 1, 0},
-    {0x82, k00, 1, 0},
-    {0x98, k00, 1, 0},
-    {0x63, k0f, 1, 0},
-    {0x64, k0f, 1, 0},
-    {0xb4, k34, 1, 0},
-    {0xb5, k30, 1, 0},
-    {0x83, k03, 1, 0},
-    {0x86, k04, 1, 0},
-    {0x87, k16, 1, 0},
-    {0x88, k0a, 1, 0},
-    {0x89, k27, 1, 0},
-    {0x93, k63, 1, 0},
-    {0x96, k81, 1, 0},
-    {0xc3, k10, 1, 0},
-    {0xe6, k00, 1, 0},
-    {0x99, k01, 1, 0},
-    {0x70, &kGammaPos[0], 1, 0},
-    {0x71, &kGammaPos[1], 1, 0},
-    {0x72, &kGammaPos[2], 1, 0},
-    {0x73, &kGammaPos[3], 1, 0},
-    {0x74, &kGammaPos[4], 1, 0},
-    {0x75, &kGammaPos[5], 1, 0},
-    {0x76, &kGammaPos[6], 1, 0},
-    {0x77, &kGammaPos[7], 1, 0},
-    {0x78, &kGammaPos[8], 1, 0},
-    {0x79, &kGammaPos[9], 1, 0},
-    {0x7a, &kGammaPos[10], 1, 0},
-    {0x7b, &kGammaPos[11], 1, 0},
-    {0x7c, &kGammaPos[12], 1, 0},
-    {0x7d, &kGammaPos[13], 1, 0},
-    {0x7e, &kGammaPos[14], 1, 0},
-    {0x7f, &kGammaPos[15], 1, 0},
-    {0xa0, &kGammaNeg[0], 1, 0},
-    {0xa1, &kGammaNeg[1], 1, 0},
-    {0xa2, &kGammaNeg[2], 1, 0},
-    {0xa3, &kGammaNeg[3], 1, 0},
-    {0xa4, &kGammaNeg[4], 1, 0},
-    {0xa5, &kGammaNeg[5], 1, 0},
-    {0xa6, &kGammaNeg[6], 1, 0},
-    {0xa7, &kGammaNeg[7], 1, 0},
-    {0xa8, &kGammaNeg[8], 1, 0},
-    {0xa9, &kGammaNeg[9], 1, 0},
-    {0xaa, &kGammaNeg[10], 1, 0},
-    {0xab, &kGammaNeg[11], 1, 0},
-    {0xac, &kGammaNeg[12], 1, 0},
-    {0xad, &kGammaNeg[13], 1, 0},
-    {0xae, &kGammaNeg[14], 1, 0},
-    {0xaf, &kGammaNeg[15], 1, 0},
+    {0xff, kA5, 1, 0},  {0x3e, k09, 1, 0},  {0x3a, k05, 1, 0},  {0x82, k00, 1, 0},
+    {0x98, k00, 1, 0},  {0x63, k0f, 1, 0},  {0x64, k0f, 1, 0},  {0xb4, k34, 1, 0},
+    {0xb5, k30, 1, 0},  {0x83, k03, 1, 0},  {0x86, k04, 1, 0},  {0x87, k16, 1, 0},
+    {0x88, k0a, 1, 0},  {0x89, k27, 1, 0},  {0x93, k63, 1, 0},  {0x96, k81, 1, 0},
+    {0xc3, k10, 1, 0},  {0xe6, k00, 1, 0},  {0x99, k01, 1, 0},
+    {0x70, kGammaPos, sizeof(kGammaPos), 0},
+    {0xa0, kGammaNeg, sizeof(kGammaNeg), 0},
     {0xff, k00, 1, 0},
-    {0x11, k00, 0, 120},
-    {0x29, k00, 0, 10},
+    {0x11, k00, 0, 200},
+    {0x29, k00, 0, 20},
 };
 }  // namespace
 
@@ -196,9 +151,14 @@ private:
         esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
         esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
         esp_lcd_panel_disp_on_off(panel, true);
-        // Light the panel before the LVGL object's row fill. A stalled SPI
-        // transfer used to die here with the backlight still off.
-        GetBacklight()->RestoreBrightness();
+        // Saved level, or 100% when NVS has none. The shared helper defaults
+        // to 75 and rewrites 0 as 10, which is the dim backlight on a blank panel.
+        Settings display_settings("display", false);
+        int brightness = display_settings.GetInt("brightness", 100);
+        if (brightness <= 0 || brightness > 100) {
+            brightness = 100;
+        }
+        GetBacklight()->SetBrightness(static_cast<uint8_t>(brightness), false);
 
         // Gap is applied on the panel. Passing it again would shift LVGL twice.
         display_ = new SpiLcdDisplay(panel_io, panel, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0, 0,

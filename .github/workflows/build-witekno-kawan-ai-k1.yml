@@ -2,9 +2,12 @@ name: Build Witekno Kawan AI K1
 
 on:
   workflow_dispatch:
-  # Also runs from a pull request so the board can be built before this file
-  # exists on the default branch. workflow_dispatch stays the manual entry,
-  # matching build-hosyond.yml.
+  # Push is required to start a run before this file exists on the default
+  # branch. workflow_dispatch only lists workflows that are already on main.
+  # pull_request covers later edits. The Hosyond workflow remains manual-only.
+  push:
+    branches:
+      - cursor/witekno-kawan-ai-k1-f5f4
   pull_request:
     paths:
       - ".github/workflows/build-witekno-kawan-ai-k1.yml"

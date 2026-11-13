@@ -35,8 +35,7 @@ std::string edit_text;
 int edit_char = 0;
 std::string pending_ssid;
 
-const char kAlphabet[] =
-    " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._:/?&=%";
+const char kAlphabet[] = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._:/?&=%";
 
 struct Ap {
     std::string ssid;
@@ -46,14 +45,17 @@ struct Ap {
 std::vector<Ap> aps;
 
 const char* kHome[] = {
-    "Games", "Settings", "WiFi scan", "Server URL", "Gemini API key",
-    "Gamepad", "Video", "Captive portal",
+    "Games",          "Settings", "WiFi scan", "Server URL",
+    "Gemini API key", "Gamepad",  "Video",     "Captive portal",
 };
 
 void Redraw();
 
 void CollectButtons(lv_obj_t* obj) {
     if (obj == nullptr) {
+        return;
+    }
+    if (lv_obj_has_flag(obj, LV_OBJ_FLAG_HIDDEN)) {
         return;
     }
     if (lv_obj_check_type(obj, &lv_button_class)) {
@@ -116,7 +118,7 @@ void SaveEdit() {
 
 void DrawHome() {
     lv_obj_clean(root);
-    Label(root, "Kawan  Vol:move  Boot:ok  Hold:back", 2);
+    Label(root, "40 next  40-hold open  39-hold back", 2);
     const int count = static_cast<int>(sizeof(kHome) / sizeof(kHome[0]));
     if (row < 0) {
         row = count - 1;
@@ -134,7 +136,7 @@ void DrawHome() {
 
 void DrawWifi() {
     lv_obj_clean(root);
-    Label(root, "WiFi  Boot:join  Hold:back", 2);
+    Label(root, "WiFi  40-hold join  39-hold back", 2);
     if (aps.empty()) {
         Label(root, "No networks. Hold boot, then scan again.", 28);
         return;
@@ -150,7 +152,8 @@ void DrawWifi() {
     if (start + window > static_cast<int>(aps.size())) {
         start = std::max(0, static_cast<int>(aps.size()) - window);
     }
-    for (int line_no = 0; line_no < window && start + line_no < static_cast<int>(aps.size()); ++line_no) {
+    for (int line_no = 0; line_no < window && start + line_no < static_cast<int>(aps.size());
+         ++line_no) {
         const Ap& ap = aps[start + line_no];
         std::string line = ap.ssid + " " + std::to_string(ap.rssi);
         lv_obj_t* label = Label(root, line.c_str(), 24 + line_no * 22);
@@ -171,39 +174,55 @@ void DrawEdit() {
         title = "Gemini API key";
     }
     Label(root, title, 2);
-    Label(root, "Vol:char  Boot:type  Double:save  Hold:del", 22);
+    Label(root, "40:next  40-hold:type  39-hold:delete", 22);
     std::string shown = edit_text;
     if (edit_target == EditTarget::kGemini && !shown.empty()) {
         shown.assign(shown.size(), '*');
     }
-    const char ch = kAlphabet[edit_char];
-    shown.push_back('[');
-    shown.push_back(ch == ' ' ? '_' : ch);
-    shown.push_back(']');
+    const int alphabet = static_cast<int>(std::strlen(kAlphabet));
+    const char* key = "OK";
+    if (edit_char >= 0 && edit_char < alphabet) {
+        key = nullptr;
+    }
+    if (key == nullptr) {
+        const char ch = kAlphabet[edit_char];
+        shown.push_back('[');
+        shown.push_back(ch == ' ' ? '_' : ch);
+        shown.push_back(']');
+    } else if (edit_char == alphabet) {
+        shown += "  [OK]";
+    } else {
+        shown += "  [DEL]";
+    }
     Label(root, shown.c_str(), 56);
 }
 
 void DrawGamepad() {
     lv_obj_clean(root);
-    Label(root, "Gamepad  Boot:pair  Hold:forget/back", 2);
+    Label(root, "Gamepad  40:next  40-hold:pair  39-hold:back", 2);
     Label(root, KawanHid::Status().c_str(), 22);
     auto devices = KawanHid::Devices();
-    if (devices.empty()) {
-        Label(root, KawanHid::Scanning() ? "Scanning..." : "No devices yet", 48);
-        return;
-    }
+    const int count = static_cast<int>(devices.size()) + 1;
     if (row < 0) {
-        row = static_cast<int>(devices.size()) - 1;
+        row = count - 1;
     }
-    if (row >= static_cast<int>(devices.size())) {
+    if (row >= count) {
         row = 0;
     }
-    for (int i = 0; i < static_cast<int>(devices.size()) && i < 8; ++i) {
+    if (devices.empty()) {
+        Label(root, KawanHid::Scanning() ? "Scanning..." : "No devices yet", 48);
+    }
+    const int shown = std::min(static_cast<int>(devices.size()), 7);
+    for (int i = 0; i < shown; ++i) {
         std::string line = devices[i].name + " " + std::to_string(devices[i].rssi);
         lv_obj_t* label = Label(root, line.c_str(), 46 + i * 20);
         if (i == row) {
             lv_obj_set_style_text_color(label, lv_color_hex(0x38BDF8), 0);
         }
+    }
+    lv_obj_t* forget = Label(root, "Forget paired device", 46 + shown * 20);
+    if (row >= static_cast<int>(devices.size())) {
+        lv_obj_set_style_text_color(forget, lv_color_hex(0xF87171), 0);
     }
 }
 
@@ -270,9 +289,11 @@ void Close() {
     }
 }
 
+int EditKeyCount() { return static_cast<int>(std::strlen(kAlphabet)) + 2; }
+
 void OnUp() {
     if (page == Page::kEdit) {
-        const int n = static_cast<int>(std::strlen(kAlphabet));
+        const int n = EditKeyCount();
         edit_char = (edit_char + n - 1) % n;
         Redraw();
         return;
@@ -283,7 +304,7 @@ void OnUp() {
 
 void OnDown() {
     if (page == Page::kEdit) {
-        const int n = static_cast<int>(std::strlen(kAlphabet));
+        const int n = EditKeyCount();
         edit_char = (edit_char + 1) % n;
         Redraw();
         return;
@@ -363,12 +384,27 @@ void OnConfirm() {
         return;
     }
     if (page == Page::kEdit) {
-        edit_text.push_back(kAlphabet[edit_char]);
+        const int alphabet = static_cast<int>(std::strlen(kAlphabet));
+        if (edit_char == alphabet) {
+            SaveEdit();
+            page = Page::kHome;
+            row = 0;
+        } else if (edit_char > alphabet) {
+            if (!edit_text.empty()) {
+                edit_text.pop_back();
+            }
+        } else {
+            edit_text.push_back(kAlphabet[edit_char]);
+        }
         Redraw();
         return;
     }
     if (page == Page::kGamepad) {
-        KawanHid::Connect(row);
+        if (row >= static_cast<int>(KawanHid::Devices().size())) {
+            KawanHid::Forget();
+        } else {
+            KawanHid::Connect(row);
+        }
         Redraw();
     }
 }
@@ -384,13 +420,10 @@ void OnSave() {
 }
 
 void OnBack() {
-    if (page == Page::kEdit && !edit_text.empty() && row < 0) {
+    if (page == Page::kEdit && !edit_text.empty()) {
         edit_text.pop_back();
         Redraw();
         return;
-    }
-    if (page == Page::kGamepad) {
-        KawanHid::Forget();
     }
     if (page == Page::kHome) {
         Close();

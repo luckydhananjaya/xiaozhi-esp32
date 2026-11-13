@@ -164,6 +164,22 @@ void SnakeGame::SpawnFood() {
     }
 }
 
+void SnakeGame::Turn(int clockwise) {
+    if (game_over_) {
+        ResetGame();
+        return;
+    }
+    const int x = next_dir_x_;
+    const int y = next_dir_y_;
+    if (clockwise > 0) {
+        next_dir_x_ = -y;
+        next_dir_y_ = x;
+    } else {
+        next_dir_x_ = y;
+        next_dir_y_ = -x;
+    }
+}
+
 void SnakeGame::ChangeDirection(int dx, int dy) {
     if (game_over_) {
         ResetGame();

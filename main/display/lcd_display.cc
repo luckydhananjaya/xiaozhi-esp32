@@ -101,10 +101,19 @@ SpiLcdDisplay::SpiLcdDisplay(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_h
                              int width, int height, int offset_x, int offset_y, bool mirror_x,
                              bool mirror_y, bool swap_xy)
     : LcdDisplay(panel_io, panel, width, height) {
-    // draw white
-    std::vector<uint16_t> buffer(width_, 0xFFFF);
-    for (int y = 0; y < height_; y++) {
-        esp_lcd_panel_draw_bitmap(panel_, 0, y, width_, y + 1, buffer.data());
+    // One internal-DMA row. A std::vector can be only 2-byte aligned, and the
+    // queued color transfer then never posts its result (portMAX_DELAY, and
+    // the task watchdog does not panic). Later rows block in the SPI driver
+    // with no further log line.
+    const size_t line_bytes = static_cast<size_t>(width_) * sizeof(uint16_t);
+    auto* line = static_cast<uint16_t*>(
+        heap_caps_aligned_alloc(4, line_bytes, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL));
+    if (line != nullptr) {
+        std::fill_n(line, width_, static_cast<uint16_t>(0xFFFF));
+        for (int y = 0; y < height_; y++) {
+            esp_lcd_panel_draw_bitmap(panel_, 0, y, width_, y + 1, line);
+        }
+        heap_caps_free(line);
     }
 
     // Set the display to on

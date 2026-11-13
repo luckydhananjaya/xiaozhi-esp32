@@ -10,6 +10,7 @@
 #include "gameboy.h"
 #include "settings_ui.h"
 #include "application.h"
+#include "board.h"
 #include <esp_log.h>
 
 #define TAG "GameManager"
@@ -58,7 +59,9 @@ static void OnFloatingGamesBtnClicked(lv_event_t* e) {
 
 void GameManager::Init() {
     chatbot_screen_ = lv_screen_active();
-    CreateFloatingGamesButton();
+    if (Board::GetInstance().HasTouchScreen()) {
+        CreateFloatingGamesButton();
+    }
     ESP_LOGI(TAG, "GameManager initialized");
 }
 

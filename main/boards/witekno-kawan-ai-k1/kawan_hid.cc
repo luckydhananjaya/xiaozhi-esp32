@@ -127,29 +127,42 @@ void HidEvent(void* handler_args, esp_event_base_t base, int32_t id, void* event
     (void)base;
     auto* param = static_cast<esp_hidh_event_data_t*>(event_data);
     const auto event = static_cast<esp_hidh_event_t>(id);
-    std::lock_guard<std::mutex> lock(mu);
-    if (event == ESP_HIDH_OPEN_EVENT) {
-        connected = param->open.status == ESP_OK;
-        status = connected ? "Paired" : "Pair failed";
-        if (connected && param->open.dev != nullptr) {
-            const uint8_t* bda = esp_hidh_dev_bda_get(param->open.dev);
-            if (bda != nullptr) {
-                char text[18];
-                snprintf(text, sizeof(text), "%02x:%02x:%02x:%02x:%02x:%02x", bda[0], bda[1], bda[2],
-                         bda[3], bda[4], bda[5]);
-                Settings settings("gamepad", true);
-                settings.SetString("bda", text);
+    uint8_t report[16];
+    uint16_t report_len = 0;
+    {
+        // MapReport walks the menu and takes this same mutex. Copy the report
+        // first so a gamepad packet cannot deadlock the BLE callback.
+        std::lock_guard<std::mutex> lock(mu);
+        if (event == ESP_HIDH_OPEN_EVENT) {
+            connected = param->open.status == ESP_OK;
+            status = connected ? "Paired" : "Pair failed";
+            if (connected && param->open.dev != nullptr) {
+                const uint8_t* bda = esp_hidh_dev_bda_get(param->open.dev);
+                if (bda != nullptr) {
+                    char text[18];
+                    snprintf(text, sizeof(text), "%02x:%02x:%02x:%02x:%02x:%02x", bda[0], bda[1],
+                             bda[2], bda[3], bda[4], bda[5]);
+                    Settings settings("gamepad", true);
+                    settings.SetString("bda", text);
+                }
             }
+        } else if (event == ESP_HIDH_CLOSE_EVENT) {
+            connected = false;
+            status = "Disconnected";
+            if (param->close.dev != nullptr) {
+                esp_hidh_dev_free(param->close.dev);
+            }
+            hid = nullptr;
+        } else if (event == ESP_HIDH_INPUT_EVENT && param->input.data != nullptr) {
+            report_len = param->input.length;
+            if (report_len > sizeof(report)) {
+                report_len = sizeof(report);
+            }
+            memcpy(report, param->input.data, report_len);
         }
-    } else if (event == ESP_HIDH_CLOSE_EVENT) {
-        connected = false;
-        status = "Disconnected";
-        if (param->close.dev != nullptr) {
-            esp_hidh_dev_free(param->close.dev);
-        }
-        hid = nullptr;
-    } else if (event == ESP_HIDH_INPUT_EVENT) {
-        MapReport(param->input.data, param->input.length);
+    }
+    if (event == ESP_HIDH_INPUT_EVENT && report_len > 0) {
+        MapReport(report, report_len);
     }
 }
 
@@ -172,8 +185,8 @@ void GapEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param) {
         return;
     }
     uint8_t len = 0;
-    uint8_t* name = esp_ble_resolve_adv_data(param->scan_rst.ble_adv,
-                                             ESP_BLE_AD_TYPE_NAME_CMPL, &len);
+    uint8_t* name =
+        esp_ble_resolve_adv_data(param->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &len);
     if (name == nullptr || len == 0) {
         name = esp_ble_resolve_adv_data(param->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_SHORT, &len);
     }
@@ -222,6 +235,7 @@ bool Start() {
     if (started) {
         return true;
     }
+    // Classic BT memory may already have been returned to the heap at boot.
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
     esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if (esp_bt_controller_init(&cfg) != ESP_OK ||

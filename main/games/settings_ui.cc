@@ -360,4 +360,14 @@ void SettingsUI::InitUI(lv_obj_t* scr) {
     lv_label_set_text(status_lbl, "OPTIMUS ONLINE");
     lv_obj_set_style_text_color(status_lbl, lv_color_hex(0xD1FAE5), 0);
     lv_obj_center(status_lbl);
+
+    // Sliders need a touchscreen. Button boards use the step buttons below them.
+    if (!Board::GetInstance().HasTouchScreen()) {
+        if (brightness_slider_ != nullptr) {
+            lv_obj_add_flag(brightness_slider_, LV_OBJ_FLAG_HIDDEN);
+        }
+        if (volume_slider_ != nullptr) {
+            lv_obj_add_flag(volume_slider_, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
 }

@@ -22,11 +22,13 @@ public:
     void Stop();
 
     void ChangeDirection(int dx, int dy);
+    // 90 degree turn from the queued heading. +1 clockwise, -1 counter-clockwise.
+    void Turn(int clockwise);
 
 private:
     static const int kGridWidth = 20;
     static const int kGridHeight = 15;
-    static const int kCellSize = 11; // 220 x 165 px
+    static const int kCellSize = 11;  // 220 x 165 px
 
     lv_obj_t* screen_ = nullptr;
     lv_obj_t* board_ = nullptr;
@@ -53,4 +55,4 @@ private:
     static void TimerCallback(lv_timer_t* t);
 };
 
-#endif // SNAKE_H
+#endif  // SNAKE_H

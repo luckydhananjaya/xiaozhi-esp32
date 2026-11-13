@@ -30,6 +30,7 @@ public:
 
     bool IsInGame() const { return current_game_ != GameType::kNone; }
     bool IsInLauncher() const { return in_launcher_; }
+    GameType CurrentGame() const { return current_game_; }
 
 private:
     GameManager();

@@ -471,6 +471,40 @@ void Application::CheckAssetsVersion() {
 }
 
 void Application::CheckNewVersion() {
+#if CONFIG_OTA_CONFIG_ONLY
+    // One POST for websocket config and activation. No version UI, no retries,
+    // and no firmware download. A failure keeps the websocket URL in NVS.
+    auto check = ota_->CheckVersion();
+    if (!check) {
+        ESP_LOGW(TAG, "OTA config request failed; using the websocket URL stored in NVS");
+        return;
+    }
+    if (!ota_->HasActivationCode() && !ota_->HasActivationChallenge()) {
+        ota_->MarkCurrentVersionValid();
+        return;
+    }
+    auto display = Board::GetInstance().GetDisplay();
+    display->SetStatus(Lang::Strings::ACTIVATION);
+    if (ota_->HasActivationCode()) {
+        ShowActivationCode(ota_->GetActivationCode(), ota_->GetActivationMessage());
+    }
+    for (int i = 0; i < 10; ++i) {
+        ESP_LOGI(TAG, "Activating... %d/%d", i + 1, 10);
+        esp_err_t err = ota_->Activate();
+        if (err == ESP_OK) {
+            break;
+        } else if (err == ESP_ERR_TIMEOUT) {
+            vTaskDelay(pdMS_TO_TICKS(3000));
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(10000));
+        }
+        if (GetDeviceState() == kDeviceStateIdle) {
+            break;
+        }
+    }
+    ota_->MarkCurrentVersionValid();
+    return;
+#endif
     const int MAX_RETRY = 10;
     int retry_count = 0;
     int retry_delay = 10;  // Initial retry delay in seconds
@@ -566,6 +600,18 @@ void Application::InitializeProtocol() {
 
     display->SetStatus(Lang::Strings::LOADING_PROTOCOL);
 
+#if CONFIG_OTA_CONFIG_ONLY
+    Settings websocket_settings("websocket", false);
+    const bool nvs_websocket = !websocket_settings.GetString("url").empty();
+    if (ota_->HasWebsocketConfig() || nvs_websocket || !ota_->HasMqttConfig()) {
+        if (!ota_->HasWebsocketConfig()) {
+            ESP_LOGI(TAG, "Using the websocket URL stored in NVS");
+        }
+        protocol_ = std::make_unique<WebsocketProtocol>();
+    } else {
+        protocol_ = std::make_unique<MqttProtocol>();
+    }
+#else
     if (ota_->HasMqttConfig()) {
         protocol_ = std::make_unique<MqttProtocol>();
     } else if (ota_->HasWebsocketConfig()) {
@@ -574,6 +620,7 @@ void Application::InitializeProtocol() {
         ESP_LOGW(TAG, "No protocol specified in the OTA config, using MQTT");
         protocol_ = std::make_unique<MqttProtocol>();
     }
+#endif
 
     protocol_->OnConnected([this]() { DismissAlert(); });
 
@@ -1305,6 +1352,12 @@ void Application::Reboot() {
 }
 
 bool Application::UpgradeFirmware(const std::string& url, const std::string& version) {
+#if CONFIG_OTA_CONFIG_ONLY
+    (void)url;
+    (void)version;
+    ESP_LOGW(TAG, "Firmware updates are disabled");
+    return false;
+#endif
     auto& board = Board::GetInstance();
     auto display = board.GetDisplay();
 

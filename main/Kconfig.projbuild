@@ -646,6 +646,9 @@ choice BOARD_TYPE
     config BOARD_TYPE_WDMOMO_CGC_144
         bool "WDMomo ESP32-CGC-144"
         depends on IDF_TARGET_ESP32
+    config BOARD_TYPE_WITEKNO_KAWAN_AI_K1
+        bool "Witekno Kawan AI K1"
+        depends on IDF_TARGET_ESP32S3
     config BOARD_TYPE_WK_ESP32S3_DEV
         bool "WK ESP32-S3 Dev Board (维控智能开发板)"
         depends on IDF_TARGET_ESP32S3
@@ -680,6 +683,25 @@ choice BOARD_TYPE
         bool "Zhengchen AI Camera Wi-Fi (征辰科技)"
         depends on IDF_TARGET_ESP32S3
 endchoice
+
+config OTA_CONFIG_ONLY
+    bool "Fetch OTA server config without installing firmware"
+    default y if BOARD_TYPE_WITEKNO_KAWAN_AI_K1
+    default n
+    help
+        POST the OTA URL once for websocket settings and activation.
+        Do not show the version-check or retry alerts, and do not download
+        or apply firmware. If the POST fails, keep the websocket URL already
+        stored in NVS and continue to idle.
+
+config WITEKNO_KAWAN_AI_K1_BATTERY_ADC
+    bool "Witekno Kawan AI K1 battery ADC"
+    depends on BOARD_TYPE_WITEKNO_KAWAN_AI_K1
+    default n
+    help
+        Reserved. ADC1 channel 6 is GPIO7, which is also I2S DIN on this
+        board. Leave disabled so the microphones keep GPIO7. Enabling the
+        option does not attach the ADC until a free sense pin is known.
 
 config RESPEAKER_I2S_EXTERNAL_CLOCK_48K
     bool "ReSpeaker: XMOS supplies 48 kHz I2S clocks"

@@ -18,6 +18,7 @@ set(SOURCES "audio/audio_codec.cc"
             "display/text_glyph.cc"
             "display/lcd_display.cc"
             "games/game_manager.cc"
+            "games/game_input.cc"
             "games/game_launcher.cc"
             "games/tetris.cc"
             "games/breakout.cc"
@@ -972,6 +973,11 @@ elseif(CONFIG_BOARD_TYPE_LC_S3_WIFI_1_54TFT)
     set(BUILTIN_TEXT_FONT font_noto_sans_basic_20_4)
     set(BUILTIN_ICON_FONT font_material_symbols_20_4)
     set(DEFAULT_EMOJI_COLLECTION noto-color-emoji_64)
+elseif(CONFIG_BOARD_TYPE_WITEKNO_KAWAN_AI_K1)
+    set(BOARD_DIR "witekno-kawan-ai-k1")
+    set(BUILTIN_TEXT_FONT font_noto_sans_basic_20_4)
+    set(BUILTIN_ICON_FONT font_material_symbols_20_4)
+    set(DEFAULT_EMOJI_COLLECTION noto-color-emoji_64)
 endif()
 
 if(NOT BOARD_DIR AND NOT CMAKE_BUILD_EARLY_EXPANSION)
@@ -1229,6 +1235,7 @@ idf_component_register(SRCS ${SOURCES}
                         console
                         efuse
                         bt
+                        esp_hid
                         fatfs
                         xiaozhi-fonts
                         ${MAIN_PRIV_REQUIRES_EXTRA}

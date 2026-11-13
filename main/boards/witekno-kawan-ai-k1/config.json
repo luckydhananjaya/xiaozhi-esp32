@@ -1,0 +1,9 @@
+{
+    "type": "witekno-kawan-ai-k1",
+    "target": "esp32s3",
+    "builds": [
+        {
+            "name": "witekno-kawan-ai-k1"
+        }
+    ]
+}

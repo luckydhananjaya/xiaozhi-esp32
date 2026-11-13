@@ -1,0 +1,37 @@
+name: Build Witekno Kawan AI K1
+
+on:
+  workflow_dispatch:
+  # Also runs from a pull request so the board can be built before this file
+  # exists on the default branch. workflow_dispatch stays the manual entry,
+  # matching build-hosyond.yml.
+  pull_request:
+    paths:
+      - ".github/workflows/build-witekno-kawan-ai-k1.yml"
+      - "main/boards/witekno-kawan-ai-k1/**"
+      - "main/CMakeLists.txt"
+      - "main/Kconfig.projbuild"
+      - "main/idf_component.yml"
+
+jobs:
+  build:
+    name: Build Witekno Kawan AI K1 English
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v6.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          source "$IDF_PATH/export.sh"
+          python scripts/build.py witekno-kawan-ai-k1 --language en-US
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: witekno-kawan-ai-k1-english-firmware
+          path: build/merged-binary.bin
+          if-no-files-found: error

@@ -684,6 +684,16 @@ choice BOARD_TYPE
         depends on IDF_TARGET_ESP32S3
 endchoice
 
+config OTA_CONFIG_ONLY
+    bool "Fetch OTA server config without installing firmware"
+    default y if BOARD_TYPE_WITEKNO_KAWAN_AI_K1
+    default n
+    help
+        POST the OTA URL once for websocket settings and activation.
+        Do not show the version-check or retry alerts, and do not download
+        or apply firmware. If the POST fails, keep the websocket URL already
+        stored in NVS and continue to idle.
+
 config WITEKNO_KAWAN_AI_K1_BATTERY_ADC
     bool "Witekno Kawan AI K1 battery ADC"
     depends on BOARD_TYPE_WITEKNO_KAWAN_AI_K1

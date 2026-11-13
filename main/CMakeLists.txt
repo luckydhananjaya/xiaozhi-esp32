@@ -18,6 +18,7 @@ set(SOURCES "audio/audio_codec.cc"
             "display/text_glyph.cc"
             "display/lcd_display.cc"
             "games/game_manager.cc"
+            "games/game_input.cc"
             "games/game_launcher.cc"
             "games/tetris.cc"
             "games/breakout.cc"
@@ -1234,6 +1235,7 @@ idf_component_register(SRCS ${SOURCES}
                         console
                         efuse
                         bt
+                        esp_hid
                         fatfs
                         xiaozhi-fonts
                         ${MAIN_PRIV_REQUIRES_EXTRA}

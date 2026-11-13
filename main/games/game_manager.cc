@@ -14,6 +14,35 @@
 
 #define TAG "GameManager"
 
+// The arcade screens are laid out at 320x240. On that size this is a no-op, so
+// the Hosyond board is unchanged. Smaller panels (this fork's 284x240 board)
+// get a uniform scale from the top-left.
+static void FitArcadeScreen(lv_obj_t* scr) {
+    if (scr == nullptr) {
+        return;
+    }
+    lv_display_t* disp = lv_display_get_default();
+    if (disp == nullptr) {
+        return;
+    }
+    const int32_t hor = lv_display_get_horizontal_resolution(disp);
+    const int32_t ver = lv_display_get_vertical_resolution(disp);
+    if (hor >= 320 && ver >= 240) {
+        return;
+    }
+    int32_t zoom = (hor * 256) / 320;
+    const int32_t zoom_y = (ver * 256) / 240;
+    if (zoom_y < zoom) {
+        zoom = zoom_y;
+    }
+    if (zoom < 64) {
+        zoom = 64;
+    }
+    lv_obj_set_style_transform_pivot_x(scr, 0, 0);
+    lv_obj_set_style_transform_pivot_y(scr, 0, 0);
+    lv_obj_set_style_transform_scale(scr, zoom, 0);
+}
+
 GameManager& GameManager::GetInstance() {
     static GameManager instance;
     return instance;
@@ -38,8 +67,16 @@ void GameManager::CreateFloatingGamesButton() {
 
     // High-visibility Games Button on chatbot screen at bottom-right (x=216, y=186, w=96, h=46)
     games_btn_ = lv_button_create(chatbot_screen_);
-    lv_obj_set_pos(games_btn_, 216, 186);
-    lv_obj_set_size(games_btn_, 96, 46);
+    lv_display_t* disp = lv_display_get_default();
+    const int32_t hor = disp ? lv_display_get_horizontal_resolution(disp) : 320;
+    const int32_t ver = disp ? lv_display_get_vertical_resolution(disp) : 240;
+    if (hor >= 320 && ver >= 240) {
+        lv_obj_set_pos(games_btn_, 216, 186);
+        lv_obj_set_size(games_btn_, 96, 46);
+    } else {
+        lv_obj_set_size(games_btn_, 72, 36);
+        lv_obj_align(games_btn_, LV_ALIGN_BOTTOM_RIGHT, -4, -4);
+    }
     lv_obj_set_style_bg_color(games_btn_, lv_color_hex(0x0F172A), 0);
     lv_obj_set_style_bg_opa(games_btn_, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(games_btn_, 2, 0);
@@ -69,6 +106,7 @@ void GameManager::ShowLauncher() {
 
     in_launcher_ = true;
     current_game_ = GameType::kNone;
+    FitArcadeScreen(launcher_screen_);
     lv_screen_load(launcher_screen_);
     ESP_LOGI(TAG, "Switched to Game Launcher (320x240)");
 }
@@ -92,38 +130,47 @@ void GameManager::StartGame(GameType game) {
 
     if (game == GameType::kTetris) {
         game_screen_ = TetrisGame::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Tetris");
     } else if (game == GameType::kBreakout) {
         game_screen_ = BreakoutGame::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Breakout");
     } else if (game == GameType::kSnake) {
         game_screen_ = SnakeGame::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Snake");
     } else if (game == GameType::kFlappy) {
         game_screen_ = FlappyGame::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Flappy Bird");
     } else if (game == GameType::kInvaders) {
         game_screen_ = InvadersGame::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Space Invaders");
     } else if (game == GameType::kPong) {
         game_screen_ = PongGame::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Pong");
     } else if (game == GameType::kPuzzle2048) {
         game_screen_ = Puzzle2048Game::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started 2048");
     } else if (game == GameType::kGameBoy) {
         game_screen_ = GameBoyApp::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started GameBoy App");
     } else if (game == GameType::kSettings) {
         game_screen_ = SettingsUI::CreateScreen();
+        FitArcadeScreen(game_screen_);
         lv_screen_load(game_screen_);
         ESP_LOGI(TAG, "Started Settings Screen");
     }

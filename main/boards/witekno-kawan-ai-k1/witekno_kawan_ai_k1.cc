@@ -4,7 +4,12 @@
 #include "codecs/box_audio_codec.h"
 #include "config.h"
 #include "display/lcd_display.h"
+#include "games/game_input.h"
+#include "games/game_manager.h"
 #include "games/screen_sleep_manager.h"
+#include "kawan_hid.h"
+#include "kawan_menu.h"
+#include "kawan_video.h"
 #include "mcp_server.h"
 #include "wifi_board.h"
 
@@ -18,6 +23,16 @@
 #include <freertos/task.h>
 
 #define TAG "WiteknoKawanAiK1"
+
+class KawanDisplay : public SpiLcdDisplay {
+public:
+    using SpiLcdDisplay::SpiLcdDisplay;
+
+    void SetupUI() override {
+        SpiLcdDisplay::SetupUI();
+        GameManager::GetInstance().Init();
+    }
+};
 
 // ESP-Box style BoxAudioCodec (ES8311 + ES7210) plus an SPI LCD.
 // Panel geometry follows espressif/esp-sensairshuttle (284x240, gap x=36).
@@ -93,8 +108,8 @@ private:
         esp_lcd_panel_disp_on_off(panel, true);
 
         // Gap is applied on the panel. Passing it again would shift LVGL twice.
-        display_ = new SpiLcdDisplay(panel_io, panel, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0, 0,
-                                     DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
+        display_ = new KawanDisplay(panel_io, panel, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0, 0,
+                                    DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y, DISPLAY_SWAP_XY);
     }
 
     void InitializeChargeDetect() {
@@ -115,9 +130,43 @@ private:
 #endif
     }
 
+    bool RouteArcade(GamePadAction action) {
+        auto& games = GameManager::GetInstance();
+        if (KawanUiUsesButtons()) {
+            if (action == GamePadAction::kLeft || action == GamePadAction::kUp) {
+                KawanUiMove(-1);
+            } else if (action == GamePadAction::kRight || action == GamePadAction::kDown) {
+                KawanUiMove(1);
+            } else if (action == GamePadAction::kAction) {
+                KawanUiActivate();
+            } else if (action == GamePadAction::kDrop) {
+                games.ExitToChatbot();
+                KawanUiClearFocus();
+            }
+            return true;
+        }
+        if (games.IsInGame()) {
+            if (action == GamePadAction::kDrop) {
+                games.ExitCurrentGame();
+                KawanUiClearFocus();
+            } else {
+                ApplyGamePadAction(action);
+            }
+            return true;
+        }
+        return false;
+    }
+
     void InitializeButtons() {
         boot_button_.OnClick([this]() {
             ScreenSleepManager::GetInstance().WakeUp();
+            if (KawanMenu::IsOpen()) {
+                KawanMenu::OnConfirm();
+                return;
+            }
+            if (RouteArcade(GamePadAction::kAction)) {
+                return;
+            }
             auto& app = Application::GetInstance();
             if (app.GetDeviceState() == kDeviceStateStarting) {
                 EnterWifiConfigMode();
@@ -125,19 +174,47 @@ private:
             }
             app.ToggleChatState();
         });
-
-#if CONFIG_USE_DEVICE_AEC
         boot_button_.OnDoubleClick([this]() {
             ScreenSleepManager::GetInstance().WakeUp();
-            auto& app = Application::GetInstance();
-            if (app.GetDeviceState() == kDeviceStateIdle) {
-                app.SetAecMode(app.GetAecMode() == kAecOff ? kAecOnDeviceSide : kAecOff);
+            if (KawanMenu::IsOpen()) {
+                KawanMenu::OnSave();
+                return;
             }
+            if (GameManager::GetInstance().IsInGame() || GameManager::GetInstance().IsInLauncher()) {
+                return;
+            }
+            KawanMenu::Open();
         });
-#endif
+        boot_button_.OnLongPress([this]() {
+            ScreenSleepManager::GetInstance().WakeUp();
+            if (KawanMenu::IsOpen()) {
+                KawanMenu::OnBack();
+                return;
+            }
+            if (KawanVideo::Playing()) {
+                KawanVideo::Stop();
+                return;
+            }
+            RouteArcade(GamePadAction::kDrop);
+        });
 
         volume_up_button_.OnClick([this]() {
             ScreenSleepManager::GetInstance().WakeUp();
+            if (KawanMenu::IsOpen()) {
+                KawanMenu::OnUp();
+                return;
+            }
+            if (KawanUiUsesButtons()) {
+                KawanUiMove(-1);
+                return;
+            }
+            if (GameManager::GetInstance().IsInGame()) {
+                const GameType game = GameManager::GetInstance().CurrentGame();
+                const bool vertical = game == GameType::kSnake || game == GameType::kPong ||
+                                      game == GameType::kPuzzle2048 || game == GameType::kGameBoy;
+                ApplyGamePadAction(vertical ? GamePadAction::kUp : GamePadAction::kRight);
+                return;
+            }
             auto codec = GetAudioCodec();
             auto volume = codec->output_volume() + 10;
             if (volume > 100) {
@@ -146,14 +223,23 @@ private:
             codec->SetOutputVolume(volume);
             GetDisplay()->ShowNotification(Lang::Strings::VOLUME + std::to_string(volume));
         });
-        volume_up_button_.OnLongPress([this]() {
-            ScreenSleepManager::GetInstance().WakeUp();
-            GetAudioCodec()->SetOutputVolume(100);
-            GetDisplay()->ShowNotification(Lang::Strings::MAX_VOLUME);
-        });
-
         volume_down_button_.OnClick([this]() {
             ScreenSleepManager::GetInstance().WakeUp();
+            if (KawanMenu::IsOpen()) {
+                KawanMenu::OnDown();
+                return;
+            }
+            if (KawanUiUsesButtons()) {
+                KawanUiMove(1);
+                return;
+            }
+            if (GameManager::GetInstance().IsInGame()) {
+                const GameType game = GameManager::GetInstance().CurrentGame();
+                const bool vertical = game == GameType::kSnake || game == GameType::kPong ||
+                                      game == GameType::kPuzzle2048 || game == GameType::kGameBoy;
+                ApplyGamePadAction(vertical ? GamePadAction::kDown : GamePadAction::kLeft);
+                return;
+            }
             auto codec = GetAudioCodec();
             auto volume = codec->output_volume() - 10;
             if (volume < 0) {
@@ -161,11 +247,6 @@ private:
             }
             codec->SetOutputVolume(volume);
             GetDisplay()->ShowNotification(Lang::Strings::VOLUME + std::to_string(volume));
-        });
-        volume_down_button_.OnLongPress([this]() {
-            ScreenSleepManager::GetInstance().WakeUp();
-            GetAudioCodec()->SetOutputVolume(0);
-            GetDisplay()->ShowNotification(Lang::Strings::MUTED);
         });
     }
 
@@ -181,6 +262,53 @@ private:
                     [](const PropertyList& properties) -> ReturnValue {
                         ScreenSleepManager::GetInstance().WakeUp();
                         return "Screen woken up";
+                    });
+        mcp.AddTool("self.games.launch",
+                    "Launch retro arcade game or games menu. Parameter `game`: 'launcher', 'tetris', "
+                    "'breakout', 'snake', 'flappy', 'invaders', 'pong', '2048', or 'gameboy'.",
+                    PropertyList({Property("game", kPropertyTypeString, std::string("launcher"))}),
+                    [](const PropertyList& properties) -> ReturnValue {
+                        std::string game = properties["game"].value<std::string>();
+                        if (game == "tetris") {
+                            GameManager::GetInstance().StartGame(GameType::kTetris);
+                        } else if (game == "breakout" || game == "bricks") {
+                            GameManager::GetInstance().StartGame(GameType::kBreakout);
+                        } else if (game == "snake") {
+                            GameManager::GetInstance().StartGame(GameType::kSnake);
+                        } else if (game == "flappy") {
+                            GameManager::GetInstance().StartGame(GameType::kFlappy);
+                        } else if (game == "invaders") {
+                            GameManager::GetInstance().StartGame(GameType::kInvaders);
+                        } else if (game == "pong") {
+                            GameManager::GetInstance().StartGame(GameType::kPong);
+                        } else if (game == "2048") {
+                            GameManager::GetInstance().StartGame(GameType::kPuzzle2048);
+                        } else if (game == "gameboy" || game == "gb") {
+                            GameManager::GetInstance().StartGame(GameType::kGameBoy);
+                        } else if (game == "settings") {
+                            GameManager::GetInstance().ShowSettings();
+                        } else {
+                            GameManager::GetInstance().ShowLauncher();
+                        }
+                        return "Game screen opened";
+                    });
+        mcp.AddTool("self.settings.open",
+                    "Open the system settings screen.", PropertyList(),
+                    [](const PropertyList& properties) -> ReturnValue {
+                        GameManager::GetInstance().ShowSettings();
+                        return "Settings screen opened";
+                    });
+        mcp.AddTool("self.video.start",
+                    "Start the MJPEG stream. Optional url is saved in NVS.",
+                    PropertyList({Property("url", kPropertyTypeString, std::string(""))}),
+                    [](const PropertyList& properties) -> ReturnValue {
+                        KawanVideo::Start(properties["url"].value<std::string>());
+                        return KawanVideo::Playing() ? "Video started" : "Video URL missing";
+                    });
+        mcp.AddTool("self.video.stop", "Stop the MJPEG stream.", PropertyList(),
+                    [](const PropertyList& properties) -> ReturnValue {
+                        KawanVideo::Stop();
+                        return "Video stopped";
                     });
         mcp.AddTool("self.screen.set_timeout",
                     "Set screen sleep timeout in seconds (0 for never, 15, 30, 60).",

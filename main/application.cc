@@ -471,53 +471,9 @@ void Application::CheckAssetsVersion() {
 }
 
 void Application::CheckNewVersion() {
-    const int MAX_RETRY = 10;
-    int retry_count = 0;
-    int retry_delay = 10;  // Initial retry delay in seconds
-
-    auto& board = Board::GetInstance();
-    while (true) {
-        auto display = board.GetDisplay();
-        display->SetStatus(Lang::Strings::CHECKING_NEW_VERSION);
-
-        auto check = ota_->CheckVersion();
-        if (!check) {
-            retry_count++;
-            if (retry_count >= MAX_RETRY) {
-                ESP_LOGE(TAG, "Too many retries, exit version check");
-                return;
-            }
-
-            const auto& err = check.error();
-            char error_message[160];
-            int error_message_length =
-                snprintf(error_message, sizeof(error_message), "%s", err.ToString().c_str());
-            if (error_message_length < 0 ||
-                error_message_length >= static_cast<int>(sizeof(error_message))) {
-                snprintf(error_message, sizeof(error_message), "%s", err.Message());
-            }
-
-            char buffer[320];
-            int alert_message_length =
-                snprintf(buffer, sizeof(buffer), Lang::Strings::CHECK_NEW_VERSION_FAILED,
-                         retry_delay, error_message);
-            if (alert_message_length < 0 ||
-                alert_message_length >= static_cast<int>(sizeof(buffer))) {
-                snprintf(buffer, sizeof(buffer), "%s", err.Message());
-            }
-            Alert(Lang::Strings::ERROR, buffer, "cloud_off", Lang::Sounds::OGG_EXCLAMATION);
-
-            ESP_LOGW(TAG, "Check new version failed, retry in %d seconds (%d/%d)", retry_delay,
-                     retry_count, MAX_RETRY);
-            for (int i = 0; i < retry_delay; i++) {
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                if (GetDeviceState() == kDeviceStateIdle) {
-                    break;
-                }
-            }
-            retry_delay *= 2;  // Double the retry delay
-            continue;
-        }
+    ESP_LOGI(TAG, "OTA Check bypassed for instant offline boot");
+    return;
+}
         retry_count = 0;
         retry_delay = 10;  // Reset retry delay
 
@@ -568,11 +524,8 @@ void Application::InitializeProtocol() {
 
     if (ota_->HasMqttConfig()) {
         protocol_ = std::make_unique<MqttProtocol>();
-    } else if (ota_->HasWebsocketConfig()) {
-        protocol_ = std::make_unique<WebsocketProtocol>();
     } else {
-        ESP_LOGW(TAG, "No protocol specified in the OTA config, using MQTT");
-        protocol_ = std::make_unique<MqttProtocol>();
+        protocol_ = std::make_unique<WebsocketProtocol>();
     }
 
     protocol_->OnConnected([this]() { DismissAlert(); });
